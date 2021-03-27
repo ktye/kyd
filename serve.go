@@ -14,6 +14,7 @@ import (
 	"math"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -22,6 +23,7 @@ var www embed.FS
 
 var db hdb
 var root fs.FS
+var tile Tile
 
 type hdb struct {
 	sync.Mutex
@@ -30,9 +32,9 @@ type hdb struct {
 }
 
 func server(addr string, a DB) {
-	fmt.Println(addr + "/index.html")
-
 	db = hdb{DB: a, cal: Calendar(a)}
+	tile = NewTile(db)
+	fmt.Println(addr + "/index.html")
 
 	var e error
 	root, e = fs.Sub(www, "www")
@@ -46,6 +48,7 @@ func server(addr string, a DB) {
 	http.HandleFunc("/json", serveJson)
 	http.HandleFunc("/alt", serveAlt)
 	http.HandleFunc("/ll", serveLatLon)
+	http.HandleFunc("/tile/", serveTile)
 
 	fatal(http.ListenAndServe(addr, nil))
 }
@@ -56,9 +59,6 @@ func templ(w io.Writer, file string, data interface{}) {
 func serveIndex(w http.ResponseWriter, r *http.Request) {
 	db.Lock()
 	defer db.Unlock()
-	//q := r.URL.Query()
-	//date := q.Get("date")
-
 	n, t, km, samples := Totals(db)
 	totals := fmt.Sprintf("#%d %v %.0fkm %dsamples\n", n, t, km, samples)
 	templ(w, "index.tmpl", totals)
@@ -162,4 +162,21 @@ func serveLatLon(w http.ResponseWriter, r *http.Request) {
 		}
 		json.NewEncoder(w).Encode(p)
 	}
+}
+func serveTile(w http.ResponseWriter, r *http.Request) {
+	v := strings.Split(r.URL.Path, "/") // /tile/11/1023/234.png
+	if len(v) != 5 {
+		fmt.Println("tile: wrong path:", r.URL.Path)
+	}
+	p := func(s string) uint32 {
+		u, e := strconv.ParseUint(s, 10, 32)
+		if e != nil {
+			fmt.Println("tile:", e)
+		}
+		return uint32(u)
+	}
+	v[4] = strings.TrimSuffix(v[4], ".png")
+
+	w.Header().Set("Content-Type", "image/png")
+	tile.Png(w, p(v[2]), p(v[3]), p(v[4]))
 }

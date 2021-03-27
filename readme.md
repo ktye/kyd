@@ -34,6 +34,7 @@ kyd -table -date 2021
 /ll?id=..     lat lon(json)
 /list  ?n= &s= &w= &e=   (query rectangle north/south/west/east)
 /map.html?id=.. (comma separated)  interactive map (click-drag to draw rectangle)
+/tile/$z/$x/$y.png    tile server
 ```
 
 # database
