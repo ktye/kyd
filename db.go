@@ -5,8 +5,10 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 )
 
 type DB interface {
@@ -23,19 +25,80 @@ type DiskDB struct {
 func (d DiskDB) Len() int          { return len(d.index) }
 func (d DiskDB) Head(i int) Header { return d.index[i] }
 func (d DiskDB) File(i int) (File, error) {
-	b, e := ioutil.ReadFile(filepath.Join(d.dir, strconv.FormatInt(d.index[i].Start, 64)))
+	b, e := ioutil.ReadFile(filepath.Join(d.dir, strconv.FormatInt(d.index[i].Start, 10)))
 	if e != nil {
 		return File{}, e
 	}
 	return Decode(b)
 }
-
-func OpenDB(dir string) (DB, error) {
-	d := DiskDB{dir: dir}
-	index := filepath.Join(d.dir, "index.txt")
-	b, e := ioutil.ReadFile(index)
+func (d DiskDB) indexpath() string      { return filepath.Join(d.dir, "index.txt") }
+func (d DiskDB) filepath(f File) string { return filepath.Join(d.dir, strconv.FormatInt(f.Start, 10)) }
+func (d DiskDB) Add(f File) error {
+	for i := 0; i < d.Len(); i++ {
+		if d.Head(i).Start == f.Start {
+			return fmt.Errorf("%d: file already exists in index", f.Start)
+		}
+	}
+	fp, e := os.OpenFile(d.indexpath(), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if e != nil {
-		return nil, e
+		return e
+	}
+	defer fp.Close()
+	_, e = fmt.Fprintln(fp, f.Indexline())
+	if e != nil {
+		return e
+	}
+	if f.Samples == 0 {
+		return nil
+	}
+	w, e := os.Create(d.filepath(f))
+	if e != nil {
+		return e
+	}
+	defer w.Close()
+	return f.Encode(w)
+}
+
+func Find(db DB, id int64) (f File, e error) {
+	for i := 0; i < db.Len(); i++ {
+		h := db.Head(i)
+		if h.Start == id {
+			return db.File(i)
+		}
+	}
+	return f, fmt.Errorf("id not found: %d", id)
+}
+func Each(db DB, g func(i int, f File)) {
+	for i := 0; i < db.Len(); i++ {
+		f, e := db.File(i)
+		if e == nil {
+			g(i, f)
+		} else {
+			fmt.Fprintln(os.Stderr, e)
+		}
+	}
+}
+func EachHead(db DB, g func(i int, h Header)) {
+	for i := 0; i < db.Len(); i++ {
+		g(i, db.Head(i))
+	}
+}
+func Totals(db DB) (n int, t time.Duration, km float64, samples uint64) {
+	n = db.Len()
+	for i := 0; i < db.Len(); i++ {
+		h := db.Head(i)
+		t += time.Duration(int64(h.Seconds)) * time.Second
+		km += float64(h.Meters) / 1000
+		samples += h.Samples
+	}
+	return
+}
+
+func OpenDB(dir string) (DiskDB, error) {
+	d := DiskDB{dir: dir}
+	b, e := ioutil.ReadFile(d.indexpath())
+	if e != nil {
+		return DiskDB{}, e
 	}
 	s := bufio.NewScanner(bytes.NewReader(b))
 	line := 0
@@ -47,7 +110,7 @@ func OpenDB(dir string) (DB, error) {
 		}
 		h, e := ParseHeader(t)
 		if e != nil {
-			return nil, fmt.Errorf("%s:%d: %s", index, line, e)
+			return DiskDB{}, fmt.Errorf("%s:%d: %s", d.indexpath(), line, e)
 		}
 		d.index = append(d.index, h)
 	}

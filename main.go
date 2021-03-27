@@ -9,19 +9,28 @@ import (
 	"time"
 )
 
-// kyd -add -fit pqwerl.fit # returns timestamp
-// kyd -table
-
 func main() {
-	var add, table bool
+	var add, list, cal, table, totals, serve bool
 	var fit string
-	var span string
+	var id int64
+	var date string
 	var dir string
+	var addr string
 	flag.BoolVar(&add, "add", false, "add/import")
+	flag.BoolVar(&list, "list", false, "print header")
+	flag.BoolVar(&cal, "cal", false, "print calendar")
 	flag.BoolVar(&table, "table", false, "print file as table")
-	flag.StringVar(&span, "date", "", "time span 2020.09.12-2020.08.17 or year")
+	flag.BoolVar(&totals, "totals", false, "print db totals")
+	flag.BoolVar(&serve, "serve", false, "run as http server")
+	flag.Int64Var(&id, "id", 0, "use single file id")
+	flag.StringVar(&date, "date", "", "time span 2020.09.12-2020.08.17 or year or year.month")
 	flag.StringVar(&dir, "dir", "./db/", "db directory")
+	flag.StringVar(&addr, "http", "127.0.0.1:2021", "serve on this address")
 	flag.StringVar(&fit, "fit", "", "fit file")
+	flag.Usage = func() {
+		fmt.Fprintln(os.Stderr, "github.com/ktye/kyd")
+		flag.PrintDefaults()
+	}
 	flag.Parse()
 
 	var db DB
@@ -33,27 +42,42 @@ func main() {
 		var e error
 		db, e = OpenDB(dir)
 		fatal(e)
+		if id != 0 {
+			f, e := Find(db, id)
+			fatal(e)
+			db = SingleFile(f)
+		}
 	}
 
-	if span != "" {
-		start, end := parseSpan(span)
+	if date != "" {
+		start, end := parseSpan(date)
 		db = Range(db, start, end)
 	}
 
 	if add {
-		_, o := db.(SingleFile)
+		f, o := db.(SingleFile)
 		if o == false {
-			panic("add: no file")
+			panic("add: no single file")
 		}
-		fmt.Println("todo")
+		db, e := OpenDB(dir)
+		fatal(e)
+		fatal(db.Add(File(f)))
+		fmt.Println("a", f.Start)
+	} else if list {
+		EachHead(db, func(i int, h Header) { fmt.Println(h.String()) })
+	} else if cal {
+		Calendar(db).Write(os.Stdout)
 	} else if table {
-		for i := 0; i < db.Len(); i++ {
-			f, e := db.File(i)
-			fatal(e)
-			f.Table(os.Stdout)
-		}
+		Each(db, func(i int, f File) { f.Table(os.Stdout) })
+	} else if totals {
+		n, t, km, samples := Totals(db)
+		fmt.Printf("#%d %v %.0fkm %dsamples\n", n, t, km, samples)
+	} else if serve {
+		server(addr, db)
+
+	} else {
+		fmt.Println("no command")
 	}
-	fmt.Println("no command")
 }
 func parseSpan(s string) (int64, int64) {
 	if s == "" {
@@ -64,7 +88,7 @@ func parseSpan(s string) (int64, int64) {
 		if e != nil {
 			fatal(fmt.Errorf("cannot parse %s", s))
 		}
-		start := time.Date(y, 1, 1, 0, 0, 0, 0, nil)
+		start := time.Date(y, 1, 1, 0, 0, 0, 0, time.UTC)
 		end := start.AddDate(1, 0, 0)
 		return start.Unix(), end.Unix()
 	} else if len(s) == 7 { // 2021.01
