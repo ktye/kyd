@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>kyd</title></head>
+<link rel=icon href='favicon.png' />
+
+<link rel="stylesheet" href="leaflet.css" />
+<script src="leaflet.js"></script>
+
+<style>
+body{ padding: 0; margin: 0; overflow:hidden; font-family:monospace; }
+html, body, #map { height: 100%; width: 100vw; } 
+#alt{ position:absolute; right:0; top:0; z-index:-1 }
+#slide{ top:100; width: 100%; z-index:10;}
+#map { background-color: white; }
+</style>
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+</head>
+<body>
+<pre id="head"></pre>
+<a id="rect"></a>
+<img id="alt" width="600" height="100"></image>
+<input type="range" min="0" max="100" value="50" class="slider" id="slide">
+
+<div id="map">
+</div>
+<script>
+
+var latlon
+
+
+L.CustomBoxZoom = L.Map.BoxZoom.extend({
+  _onMouseUp: function(e) {
+    if (e.which !== 1 && e.button !== 1) return
+    this._finish()
+    if (!this._moved) return
+    this._clearDeferredResetState()
+    this._resetStateTimeout = setTimeout(L.bind(this._resetState, this), 0)
+    var latlng1 = this._map.containerPointToLatLng(this._startPoint)
+    var latlng2 = this._map.containerPointToLatLng(this._point)
+    var bounds = L.latLngBounds(latlng1, latlng2)
+    this._map.fire('boxzoomend', { boxZoomBounds: bounds })
+  },
+})
+L.Map.addInitHook('addHandler', 'customBoxZoom', L.CustomBoxZoom)
+
+var map = L.map('map', {boxZoom:false, customBoxZoom:true}) 
+map.on('boxzoomend', function(e) {
+ var b = e.boxZoomBounds
+ var rect = ge("rect")
+ rect.innerText = "rect"
+ rect.href="list?s="+b.getSouth()+"&w="+b.getWest()+"&n="+b.getNorth()+"&e="+b.getEast()
+ //console.log("bounds:", b.getSouth(), b.getWest(), b.getNorth(), b.getEast() )
+})
+
+
+var mark
+function ge(x) { return document.getElementById(x) }
+function addpath(coords){
+ var polyline = L.polyline(coords, {color: 'red'})
+ polyline.addTo(map);
+ map.fitBounds(polyline.getBounds());
+ var slide = ge("slide")
+ slide.max = coords.length
+ slide.oninput = function(){
+  var ll = coords[this.value]
+  if(mark==undefined){
+   mark = L.circleMarker(ll,{radius:3}).addTo(map)
+  }
+  mark.setLatLng(ll)
+ }
+}
+
+// L.tileLayer('{z}/{x}/{y}.png', {}).addTo(map);
+
+L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {}).addTo(map);
+
+var ids = (new URL(document.location)).searchParams.get("id").split(",")
+for(var i=0;i<ids.length;i++)fetch("ll?id="+ids[i]).then(r=>r.json()).then(d=>addpath(d))
+
+function addHead(s){var t=ge("head").innerText;ge("head").innerText=(t.length>0)?t+"\n"+s:s}
+for(var i=0;i<ids.length;i++)fetch("head?id="+ids[i]).then(r=>r.text()).then(d=>addHead(d.trim()))
+
+ge("alt").src = "alt?id="+ids[0]
+
+
+</script>
+</body>
+</html>

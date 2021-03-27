@@ -14,12 +14,27 @@ kyd -add -fit file.fit
 `kyd -cal`
 
 # dump file
-`kyd -table -id 1394964105`
-`kyd -table -date 2021.03.27`
-`kyd -table -date 2021`
+```sh
+kyd -table -id 1394964105
+kyd -table -date 2021.03.27
+kyd -table -date 2021
+```
+
+# have i been here before?
+`kyd -here 60.422018,7.184887`
 
 # serve
 `kyd -serve [-http=$ADDR]`
+
+# http api
+```
+/cal          calendar
+/head?id=..   header(text)
+/json?id=..   File as json
+/ll?id=..     lat lon(json)
+/list  ?n= &s= &w= &e=   (query rectangle north/south/west/east)
+/map.html?id=.. (comma separated)  interactive map (click-drag to draw rectangle)
+```
 
 # database
 the db is stored in a directory (default -db="./db/").
@@ -35,9 +50,6 @@ type Header struct {
 	Meters  float32 // total distance
 	Samples uint64  // number of samples
 }
-```
-
-```go
 type File struct {
 	Header
 	Time []float32 // seconds
@@ -46,9 +58,6 @@ type File struct {
 	Lat  []int32   // semicircles (invalid: 0x7FFFFFFF) (180 / math.Pow(2, 31))
 	Lon  []int32   // semicircles
 }
-```
-
-```go
 type Race struct {
 	Start   int64   // unix time (seconds)
 	Type    string  // "800m"

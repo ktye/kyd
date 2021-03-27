@@ -66,11 +66,11 @@ func mercator(lat, lon int32) (float64, float64) {
 	if la < minLat || la > maxLat {
 		return math.NaN(), math.NaN()
 	}
-	rad := func(x float64) float64 { return math.Pi * x / 180.0 }
 	x := (lo + 180) / 360
 	y := (1 - math.Log(math.Tan(rad(la)+1/math.Cos(rad(la))))/math.Pi) / 2
 	return x, y
 }
+func rad(deg float64) float64 { return math.Pi * deg / 180.0 }
 
 func Deg(s int32) float64 {
 	if s == invalidSemis {

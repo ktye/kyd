@@ -11,16 +11,14 @@ import (
 
 func main() {
 	var add, list, cal, table, totals, serve bool
-	var fit string
 	var id int64
-	var date string
-	var dir string
-	var addr string
+	var date, dir, here, addr, fit string
 	flag.BoolVar(&add, "add", false, "add/import")
 	flag.BoolVar(&list, "list", false, "print header")
 	flag.BoolVar(&cal, "cal", false, "print calendar")
 	flag.BoolVar(&table, "table", false, "print file as table")
 	flag.BoolVar(&totals, "totals", false, "print db totals")
+	flag.StringVar(&here, "here", "", "lat,lon (have i been here before?)")
 	flag.BoolVar(&serve, "serve", false, "run as http server")
 	flag.Int64Var(&id, "id", 0, "use single file id")
 	flag.StringVar(&date, "date", "", "time span 2020.09.12-2020.08.17 or year or year.month")
@@ -51,7 +49,10 @@ func main() {
 
 	if date != "" {
 		start, end := parseSpan(date)
-		db = Range(db, start, end)
+		db = FilterH(db, DateFilter(start, end))
+	}
+	if here != "" {
+		db = Here(db, here)
 	}
 
 	if add {

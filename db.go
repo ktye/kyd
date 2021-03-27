@@ -59,6 +59,15 @@ func (d DiskDB) Add(f File) error {
 	return f.Encode(w)
 }
 
+func FindH(db DB, id int64) (h Header, e error) {
+	for i := 0; i < db.Len(); i++ {
+		h := db.Head(i)
+		if h.Start == id {
+			return h, nil
+		}
+	}
+	return Header{}, fmt.Errorf("id not found: %d", id)
+}
 func Find(db DB, id int64) (f File, e error) {
 	for i := 0; i < db.Len(); i++ {
 		h := db.Head(i)
@@ -123,25 +132,40 @@ func (s SingleFile) Len() int                 { return 1 }
 func (s SingleFile) Head(i int) Header        { return s.Header }
 func (s SingleFile) File(i int) (File, error) { return File(s), nil }
 
-func Range(d DB, start, end int64) DB {
-	r := RangeDB{d: d, start: start, end: end, m: make(map[int]int)}
+func Filter(d DB, g func(f File) bool) SubDB {
+	s := SubDB{d: d, m: make(map[int]int)}
 	k := 0
 	for i := 0; i < d.Len(); i++ {
-		h := d.Head(i)
-		if h.Start >= start && h.Start <= end {
-			r.m[k] = i
+		f, e := d.File(i)
+		if e == nil && g(f) {
+			s.m[k] = i
 			k++
 		}
 	}
-	return r
+	return s
+}
+func FilterH(d DB, g func(h Header) bool) SubDB {
+	s := SubDB{d: d, m: make(map[int]int)}
+	k := 0
+	for i := 0; i < d.Len(); i++ {
+		if g(d.Head(i)) {
+			s.m[k] = i
+			k++
+		}
+	}
+	return s
+}
+func DateFilter(start, end int64) func(h Header) bool {
+	return func(h Header) bool {
+		return h.Start >= start && h.Start <= end
+	}
 }
 
-type RangeDB struct {
-	d          DB
-	start, end int64
-	m          map[int]int
+type SubDB struct {
+	d DB
+	m map[int]int
 }
 
-func (d RangeDB) Len() int                 { return len(d.m) }
-func (d RangeDB) Head(i int) Header        { return d.d.Head(d.m[i]) }
-func (d RangeDB) File(i int) (File, error) { return d.d.File(d.m[i]) }
+func (d SubDB) Len() int                 { return len(d.m) }
+func (d SubDB) Head(i int) Header        { return d.d.Head(d.m[i]) }
+func (d SubDB) File(i int) (File, error) { return d.d.File(d.m[i]) }
