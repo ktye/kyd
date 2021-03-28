@@ -55,6 +55,7 @@ func (c Cal) Write(w io.Writer, html bool) {
 	}
 	bar := func(x float64, c byte) string { return strings.Repeat(string(c), int(math.Round(x))) }
 	var ids []int64
+	var tip []string
 	tw := tabwriter.NewWriter(w, 2, 0, 3, ' ', 0)
 	th, tkm, trkm, tbkm := 0.0, 0.0, 0.0, 0.0
 	for _, wk := range c {
@@ -62,6 +63,10 @@ func (c Cal) Write(w io.Writer, html bool) {
 		for i := 0; i < 7; i++ {
 			s, id := links(wk.Day[i])
 			ids = append(ids, id...)
+			for _, h := range wk.Day[i] {
+				date := time.Unix(h.Start, 0).Format("2006.01.02")
+				tip = append(tip, fmt.Sprintf("%s %.0fkm %v", date, h.Meters/1000, time.Duration(h.Seconds)*time.Second))
+			}
 			fmt.Fprintf(tw, "%s\t", s)
 		}
 		h, km, rkm, bkm, hs, hr, hb := weekly(wk.Day[:])
@@ -77,18 +82,21 @@ func (c Cal) Write(w io.Writer, html bool) {
 		o.Write([]byte(calHead))
 		s := bufio.NewScanner(&b)
 		k := 0
+		f := func(s string, id int64, t string) {
+			fmt.Fprintf(o, `<a class="%s" id="%d" title="%s">%s</a>`, s, id, t, s)
+		}
 		for s.Scan() {
 			t := strings.Replace(s.Text(), " ", "&nbsp;", -1)
 			for _, c := range []byte(t) {
 				switch c {
 				case 'S':
-					fmt.Fprintf(o, `<a class="S" id="%d">S</a>`, ids[k])
+					f("S", ids[k], tip[k])
 					k++
 				case 'R':
-					fmt.Fprintf(o, `<a class="R" id="%d">R</a>`, ids[k])
+					f("R", ids[k], tip[k])
 					k++
 				case 'B':
-					fmt.Fprintf(o, `<a class="B" id="%d">B</a>`, ids[k])
+					f("B", ids[k], tip[k])
 					k++
 				case 'X':
 					o.WriteString(`<a class="S">█</a>`)
