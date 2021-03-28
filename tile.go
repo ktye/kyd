@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/png"
 	"io"
+	"math"
 )
 
 type Tile struct {
@@ -25,26 +25,57 @@ func NewTile(db DB) (t Tile) {
 
 func (t Tile) Png(w io.Writer, z, x, y uint32) {
 
-	fmt.Println("tile", z, x, y)
+	/*
+		s := fmt.Sprintf("tile %d/%d/%d.png points:", z, x, y)
+		var points int
+		defer func() {
+			fmt.Println(s, points)
+		}()
+	*/
 
+	z = 24 - z
 	d := uint32(256 << z)
 	x0, y0 := x*d, y*d
 
-	m := image.NewRGBA(image.Rect(0, 0, 128, 128))
+	m := image.NewRGBA(image.Rect(0, 0, 256, 256))
 	u := t.bike
-	c := color.RGBA{0, 0, 255, 255}
+	c := color.RGBA{0, 230, 115, 255} // bike(green)
 
 	draw := func() {
 		for i := 0; i < len(u); i += 2 {
-			if x, y := u[i], u[i+1]; x >= x0 && x < x0+d && y >= y0 && y < y0+d {
-				x, y = (x-x0)>>z, (y-y0)>>z
+			if x, y := (u[i]-x0)>>z, (u[i+1]-y0)>>z; x < 256 && y < 256 {
 				m.Set(int(x), int(y), c)
+				//points++
 			}
 		}
 	}
 	draw()
 	u = t.run
-	c = color.RGBA{255, 0, 0, 255}
+	c = color.RGBA{230, 57, 0, 255} // run(red)
 	draw()
 	png.Encode(w, m)
+}
+
+func (f File) WebMercator() []uint32 {
+	p := make([]uint32, 0, 2*f.Samples)
+	for i := uint64(0); i < f.Samples; i++ {
+		if a, b, o := mercator(f.Lat[i], f.Lon[i]); o {
+			p = append(p, a, b)
+		}
+	}
+	return p
+}
+
+// semicirles to web-mercator (full range)
+func mercator(lat, lon int32) (x uint32, y uint32, ok bool) {
+	ok = lat != invalidSemis && lon != invalidSemis
+	if !ok {
+		return
+	}
+	const s = float64(math.MaxUint32 / 2)
+	la := rad(Deg(lat))
+	x = uint32(lon + math.MinInt32)
+	y = uint32(s * (1 - math.Log(math.Tan(la)+1/math.Cos(la))/math.Pi))
+	//fmt.Println(lat, lon, Deg(lat), Deg(lon), x, y)
+	return x, y, la < 1.4844 && la > -1.4844
 }

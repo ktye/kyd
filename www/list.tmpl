@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>kyd</title>
+<link rel=icon href='favicon.png' />
+<style>
+ html{font-family:monospace}
+</style>
+
+</head><body>
+
+<pre>
+{{range .}}<a href="map.html?id={{.Id}}&tile={{.Tile}}">{{.Id}}</a> {{.S}}
+{{end}}
+</pre>
+
+</body></html>

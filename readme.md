@@ -7,35 +7,46 @@ touch db/index.txt
 kyd -add -fit file.fit
 ```
 
-# list
+# commands
+## list
 `kyd -list -date 2019`
 
-# calendar (one week per line)
+## calendar (one week per line)
 `kyd -cal`
 
-# dump file
+## dump file
 ```sh
 kyd -table -id 1394964105
 kyd -table -date 2021.03.27
 kyd -table -date 2021
 ```
 
-# have i been here before?
+## have i been here before?
 `kyd -here 60.422018,7.184887`
 
-# serve
+# server
 `kyd -serve [-http=$ADDR]`
 
-# http api
+## http api
 ```
 /cal          calendar
 /head?id=..   header(text)
 /json?id=..   File as json
 /ll?id=..     lat lon(json)
 /list  ?n= &s= &w= &e=   (query rectangle north/south/west/east)
-/map.html?id=.. (comma separated)  interactive map (click-drag to draw rectangle)
+/map.html?id=..             interactive map track over opentopmap
+/map.html?tile=points&id=.. generate tiles from all points in db
 /tile/$z/$x/$y.png    tile server
 ```
+
+## map multi-stage race/tour
+```
+/map.html?id=1459095710,1529758181,1536037659
+```
+
+## rectangular selection
+shift+mouse drag in `map.html` draws a rectangle and creates a link (rect).
+clicking on the like shows a list of all id's that contain points within the rectangle.
 
 # database
 the db is stored in a directory (default -db="./db/").

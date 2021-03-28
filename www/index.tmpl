@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><title>kyd</title></head>
+<head><meta charset="utf-8"><title>kyd</title>
 <link rel=icon href='favicon.png' />
 <style>
  html{font-family:monospace}
@@ -10,16 +10,19 @@
  img{float:right}
  th{text-align:left;}
 </style>
+</head><body>
 <script>
-function ge(x){return document.getElementById(x)}
+function ge(x) { return document.getElementById(x) }
+
 function toggle(id,e){e=ge(id);e.style.display=(e.style.display=='block')?'none':'block'}
 
 </script>
-<body>
+
 <pre> 
 kyd..
 </pre>
 {{.}}
-<a href="cal">cal</a>
+<a href="cal?tile=points">cal(points)</a>
+<a href="cal">cal(topo)</a>
 <a href="list">list</a>
 </body></html>

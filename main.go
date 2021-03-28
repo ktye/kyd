@@ -67,7 +67,7 @@ func main() {
 	} else if list {
 		EachHead(db, func(i int, h Header) { fmt.Println(h.String()) })
 	} else if cal {
-		Calendar(db).Write(os.Stdout)
+		Calendar(db).Write(os.Stdout, false)
 	} else if table {
 		Each(db, func(i int, f File) { f.Table(os.Stdout) })
 	} else if totals {

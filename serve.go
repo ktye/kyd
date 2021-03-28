@@ -34,7 +34,7 @@ type hdb struct {
 func server(addr string, a DB) {
 	db = hdb{DB: a, cal: Calendar(a)}
 	tile = NewTile(db)
-	fmt.Println(addr + "/index.html")
+	fmt.Println(addr+"/index.html", len(tile.run)+len(tile.bike))
 
 	var e error
 	root, e = fs.Sub(www, "www")
@@ -66,7 +66,7 @@ func serveIndex(w http.ResponseWriter, r *http.Request) {
 func serveCal(w http.ResponseWriter, r *http.Request) {
 	db.Lock()
 	defer db.Unlock()
-	db.cal.Write(w)
+	db.cal.Write(w, true)
 }
 func serveList(w http.ResponseWriter, r *http.Request) {
 	db.Lock()
@@ -75,7 +75,14 @@ func serveList(w http.ResponseWriter, r *http.Request) {
 	if g := getRect(r); g != nil {
 		d = Filter(db, g)
 	}
-	EachHead(d, func(i int, h Header) { fmt.Fprintln(w, h.String()) })
+	tile := r.URL.Query().Get("tile")
+	type t struct {
+		Id      int64
+		Tile, S string
+	}
+	var heads []t
+	EachHead(d, func(i int, h Header) { heads = append(heads, t{h.Start, tile, h.String()[11:]}) })
+	templ(w, "list.tmpl", heads)
 }
 func getRect(r *http.Request) func(f File) bool {
 	p := func(s string) float64 {
@@ -99,6 +106,13 @@ func getRect(r *http.Request) func(f File) bool {
 		}
 		return false
 	}
+}
+func pa(r *http.Request, p string) string {
+	v := r.URL.Query().Get(p)
+	if v != "" {
+		return "&" + p + "=" + v
+	}
+	return ""
 }
 func getId(r *http.Request) int64 {
 	id, e := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
@@ -139,13 +153,30 @@ func serveJson(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func serveAlt(w http.ResponseWriter, r *http.Request) {
+	W, H := 600, 50
 	f, e := getFile(r)
 	if e == nil && f.Samples > 0 {
 		w.Header().Set("Content-Type", "image/png")
-		m := image.NewRGBA(image.Rect(0, 0, 600, 100))
+		m := image.NewRGBA(image.Rect(0, 0, W, H))
+		max32 := func(x []float32) float64 {
+			m := 0.0
+			for _, v := range x {
+				if u := float64(v); math.IsNaN(u) == false && u > m {
+					m = u
+				}
+			}
+			return m
+		}
+		xs, ys := 0.001, 0.1
+		dm, am := max32(f.Dist), max32(f.Alt)
+		for xs*dm > float64(W) {
+			xs /= 2
+		}
+		for ys*am > float64(H) {
+			ys /= 2
+		}
 		for i := uint64(0); i < f.Samples; i++ {
-			x, y := float64(f.Dist[i])/1000, float64(f.Alt[i])
-			x, y = 2*x, (1000-y)/10
+			x, y := xs*float64(f.Dist[i]), float64(H)-ys*float64(f.Alt[i])
 			if math.IsNaN(x) == false && math.IsNaN(y) == false {
 				m.Set(int(x), int(y), color.Black)
 			}
@@ -156,11 +187,18 @@ func serveAlt(w http.ResponseWriter, r *http.Request) {
 func serveLatLon(w http.ResponseWriter, r *http.Request) {
 	f, e := getFile(r)
 	if e == nil {
-		p := make([][2]float64, f.Samples)
+		p := make([][2]float64, 0, f.Samples)
 		for i := uint64(0); i < f.Samples; i++ {
-			p[i][0], p[i][1] = Deg(f.Lat[i]), Deg(f.Lon[i])
+			la, lo := Deg(f.Lat[i]), Deg(f.Lon[i])
+			if math.IsNaN(la) == false && math.IsNaN(lo) == false {
+				p = append(p, [2]float64{la, lo})
+			}
 		}
-		json.NewEncoder(w).Encode(p)
+		if e := json.NewEncoder(w).Encode(p); e != nil {
+			fmt.Println("ll", e)
+		}
+	} else {
+		fmt.Println("ll", e)
 	}
 }
 func serveTile(w http.ResponseWriter, r *http.Request) {

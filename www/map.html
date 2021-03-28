@@ -19,15 +19,18 @@ html, body, #map { height: 100%; width: 100vw; }
 <body>
 <pre id="head"></pre>
 <a id="rect"></a>
-<img id="alt" width="600" height="100"></image>
+<img id="alt" width="600" height="50"></image>
 <input type="range" min="0" max="100" value="50" class="slider" id="slide">
 
 <div id="map">
 </div>
 <script>
 
-var latlon
+function ge(x) { return document.getElementById(x) }
+function gu(x) { return (new URL(document.location)).searchParams.get(x) } // or null
+function pa(x) { var r=gu(x);return r?("&"+x+"="+r):"" }
 
+var latlon
 
 L.CustomBoxZoom = L.Map.BoxZoom.extend({
   _onMouseUp: function(e) {
@@ -49,15 +52,13 @@ map.on('boxzoomend', function(e) {
  var b = e.boxZoomBounds
  var rect = ge("rect")
  rect.innerText = "rect"
- rect.href="list?s="+b.getSouth()+"&w="+b.getWest()+"&n="+b.getNorth()+"&e="+b.getEast()
- //console.log("bounds:", b.getSouth(), b.getWest(), b.getNorth(), b.getEast() )
+ rect.href="list?s="+b.getSouth()+"&w="+b.getWest()+"&n="+b.getNorth()+"&e="+b.getEast()+pa("tile")
 })
 
 
 var mark
-function ge(x) { return document.getElementById(x) }
 function addpath(coords){
- var polyline = L.polyline(coords, {color: 'red'})
+ var polyline = L.polyline(coords, {color: "#0000e6"})
  polyline.addTo(map);
  map.fitBounds(polyline.getBounds());
  var slide = ge("slide")
@@ -65,18 +66,18 @@ function addpath(coords){
  slide.oninput = function(){
   var ll = coords[this.value]
   if(mark==undefined){
-   mark = L.circleMarker(ll,{radius:3}).addTo(map)
+   mark = L.circleMarker(ll,{radius:3,color:'red'}).addTo(map)
   }
   mark.setLatLng(ll)
  }
 }
 
-var tile = (new URL(document.location)).searchParams.get("tile")
+var tile = gu("tile")
 var tilesrc = (tile==="points")?"tile/{z}/{x}/{y}.png":"https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
 
 L.tileLayer(tilesrc, {}).addTo(map);
 
-var ids = (new URL(document.location)).searchParams.get("id").split(",")
+var ids = gu("id").split(",")
 for(var i=0;i<ids.length;i++)fetch("ll?id="+ids[i]).then(r=>r.json()).then(d=>addpath(d))
 
 function addHead(s){var t=ge("head").innerText;ge("head").innerText=(t.length>0)?t+"\n"+s:s}

@@ -45,29 +45,7 @@ func (f *File) alloc() {
 	f.Lon = make([]int32, samples)
 }
 func (f File) Empty() bool { return f.Start == 0 }
-func (f File) WebMercator() []uint32 {
-	p := make([]uint32, 0, 2*f.Samples)
-	for i := uint64(0); i < f.Samples; i++ {
-		if a, b := mercator(f.Lat[i], f.Lon[i]); math.IsNaN(a) == false {
-			p = append(p, uint32(a), uint32(b))
-		}
-	}
-	return p
-}
-func mercator(lat, lon int32) (float64, float64) {
-	const minLat float64 = -85.0511287725758 // (zoom=24, -84.92832092949963 zoom=0)
-	const maxLat float64 = 85.05112877980659
-	if lat == invalidSemis || lon == invalidSemis {
-		return math.NaN(), math.NaN()
-	}
-	la, lo := Deg(lat), Deg(lon)
-	if la < minLat || la > maxLat {
-		return math.NaN(), math.NaN()
-	}
-	x := (lo + 180) / 360
-	y := (1 - math.Log(math.Tan(rad(la)+1/math.Cos(rad(la))))/math.Pi) / 2
-	return x, y
-}
+
 func rad(deg float64) float64 { return math.Pi * deg / 180.0 }
 
 func Deg(s int32) float64 {
