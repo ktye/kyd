@@ -42,6 +42,7 @@ func server(addr string, a DB) {
 	http.Handle("/", http.FileServer(http.FS(root)))
 	template.ParseFS(www, "*.tmpl")
 	http.HandleFunc("/index.html", serveIndex)
+	http.HandleFunc("/strip.png", serveStrip)
 	http.HandleFunc("/cal", serveCal)
 	http.HandleFunc("/list", serveList)
 	http.HandleFunc("/head", serveHead)
@@ -66,7 +67,11 @@ func serveIndex(w http.ResponseWriter, r *http.Request) {
 func serveCal(w http.ResponseWriter, r *http.Request) {
 	db.Lock()
 	defer db.Unlock()
-	db.cal.Write(w, true)
+	wk := -1
+	if i, e := strconv.Atoi(r.URL.Query().Get("w")); e == nil {
+		wk = i
+	}
+	db.cal.Write(w, true, wk)
 }
 func serveList(w http.ResponseWriter, r *http.Request) {
 	db.Lock()
@@ -217,4 +222,12 @@ func serveTile(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "image/png")
 	tile.Png(w, p(v[2]), p(v[3]), p(v[4]))
+}
+func serveStrip(w http.ResponseWriter, r *http.Request) {
+	db.Lock()
+	defer db.Unlock()
+	w.Header().Set("Content-Type", "image/png")
+	if e := db.cal.WriteStrip(w); e != nil {
+		fmt.Println(e)
+	}
 }

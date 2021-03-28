@@ -39,7 +39,7 @@ func (t Tile) Png(w io.Writer, z, x, y uint32) {
 
 	m := image.NewRGBA(image.Rect(0, 0, 256, 256))
 	u := t.bike
-	c := color.RGBA{0, 230, 115, 255} // bike(green)
+	c := green
 
 	draw := func() {
 		for i := 0; i < len(u); i += 2 {
@@ -51,7 +51,7 @@ func (t Tile) Png(w io.Writer, z, x, y uint32) {
 	}
 	draw()
 	u = t.run
-	c = color.RGBA{230, 57, 0, 255} // run(red)
+	c = red
 	draw()
 	png.Encode(w, m)
 }
@@ -79,3 +79,9 @@ func mercator(lat, lon int32) (x uint32, y uint32, ok bool) {
 	//fmt.Println(lat, lon, Deg(lat), Deg(lon), x, y)
 	return x, y, la < 1.4844 && la > -1.4844
 }
+
+var (
+	red   = color.RGBA{230, 57, 0, 255}
+	green = color.RGBA{0, 230, 115, 255}
+	blue  = color.RGBA{0, 71, 171, 255}
+)

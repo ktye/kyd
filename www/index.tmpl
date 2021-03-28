@@ -4,25 +4,42 @@
 <link rel=icon href='favicon.png' />
 <style>
  html{font-family:monospace}
+ //body{background-image:url('strip.png');}
  pre{background:#ffffea}
- textarea{background:black;color:white;width:100%;resize:none;overflow-y:hidden}
- ul{position:fixed;top:0;right:10}
- img{float:right}
+
+ img{float:left}
  th{text-align:left;}
 </style>
 </head><body>
 <script>
 function ge(x) { return document.getElementById(x) }
+function gu(x) { return (new URL(document.location)).searchParams.get(x) } // or null
+function pa(x) { var r=gu(x);return r?("&"+x+"="+r):"" }
 
 function toggle(id,e){e=ge(id);e.style.display=(e.style.display=='block')?'none':'block'}
 
+function stripclick(e){
+ var y=e.pageY-e.target.offsetTop
+ ge("stripln").href="cal?w="+y+pa("tile")+"#hi"
+ console.log(y)
+}
 </script>
 
+<a id="stripln"><img src="strip.png" id="strip"></a>
 <pre> 
 kyd..
 </pre>
 {{.}}
-<a href="cal?tile=points">cal(points)</a>
-<a href="cal">cal(topo)</a>
-<a href="list">list</a>
+<a href="cal?" id="cal">cal</a>
+<a href="list?" id="list">list</a>
+<a href="index.html?tile=points">index(points)</a>
+<a href="index.html">index(topo)</a>
+
+<script>
+ge("cal").href += pa("tile")
+ge("list").href += pa("tile")
+ge("strip").addEventListener("click", stripclick)
+
+</script>
+
 </body></html>
