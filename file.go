@@ -30,7 +30,6 @@ type Header struct {
 type Race struct {
 	Start   int64   // unix time (seconds)
 	Type    string  // "800m"
-	Meters  float32 // meters
 	Seconds float32 // seconds
 	Result  string  // "101/2048"
 	Name    string

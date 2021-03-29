@@ -12,7 +12,7 @@ import (
 func main() {
 	var add, list, cal, table, totals, serve bool
 	var id int64
-	var date, dir, here, addr, fit string
+	var date, dir, here, addr, fit, imprt string
 	flag.BoolVar(&add, "add", false, "add/import")
 	flag.BoolVar(&list, "list", false, "print header")
 	flag.BoolVar(&cal, "cal", false, "print calendar")
@@ -25,11 +25,17 @@ func main() {
 	flag.StringVar(&dir, "dir", "./db/", "db directory")
 	flag.StringVar(&addr, "http", "127.0.0.1:2021", "serve on this address")
 	flag.StringVar(&fit, "fit", "", "fit file")
+	flag.StringVar(&imprt, "import", "", "import old db")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "github.com/ktye/kyd")
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	if imprt != "" {
+		importDB(imprt)
+		return
+	}
 
 	var db DB
 	if fit != "" {
