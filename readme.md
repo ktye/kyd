@@ -35,7 +35,7 @@ kyd -table -date 2021
 /ll?id=..     lat lon(json)
 /list  ?n= &s= &w= &e=   (query rectangle north/south/west/east)
 /map.html?id=..             interactive map track over opentopmap
-/map.html?tile=points&id=.. generate tiles from all points in db
+/map.html?tile=..id=.. generate tiles from all points in db (tile=points|grey|inferno)
 /strip.png    barplot weekly hours, one pixel row per week
 /tile/$z/$x/$y.png    tile server
 ```

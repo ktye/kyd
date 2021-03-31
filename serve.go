@@ -207,8 +207,8 @@ func serveLatLon(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func serveTile(w http.ResponseWriter, r *http.Request) {
-	v := strings.Split(r.URL.Path, "/") // /tile/11/1023/234.png
-	if len(v) != 5 {
+	v := strings.Split(r.URL.Path, "/") // /tile/grey/11/1023/234.png or /tile/points/$z/$x/$y.png
+	if len(v) != 6 {
 		fmt.Println("tile: wrong path:", r.URL.Path)
 	}
 	p := func(s string) uint32 {
@@ -218,10 +218,10 @@ func serveTile(w http.ResponseWriter, r *http.Request) {
 		}
 		return uint32(u)
 	}
-	v[4] = strings.TrimSuffix(v[4], ".png")
+	v[5] = strings.TrimSuffix(v[5], ".png")
 
 	w.Header().Set("Content-Type", "image/png")
-	tile.Png(w, p(v[2]), p(v[3]), p(v[4]))
+	tile.Png(w, p(v[3]), p(v[4]), p(v[5]), v[2])
 }
 func serveStrip(w http.ResponseWriter, r *http.Request) {
 	db.Lock()

@@ -23,37 +23,74 @@ func NewTile(db DB) (t Tile) {
 	return t
 }
 
-func (t Tile) Png(w io.Writer, z, x, y uint32) {
-
-	/*
-		s := fmt.Sprintf("tile %d/%d/%d.png points:", z, x, y)
-		var points int
-		defer func() {
-			fmt.Println(s, points)
-		}()
-	*/
-
+func (t Tile) Png(w io.Writer, z, x, y uint32, tileType string) {
 	z = 24 - z
 	d := uint32(256 << z)
 	x0, y0 := x*d, y*d
 
-	m := image.NewRGBA(image.Rect(0, 0, 256, 256))
-	u := t.bike
-	c := green
-
-	draw := func() {
-		for i := 0; i < len(u); i += 2 {
-			if x, y := (u[i]-x0)>>z, (u[i+1]-y0)>>z; x < 256 && y < 256 {
-				m.Set(int(x), int(y), c)
-				//points++
+	var newImage func() image.Image
+	var drwImage func(image.Image) image.Image
+	if tileType == "grey" {
+		newImage = func() image.Image { return image.NewGray(image.Rect(0, 0, 256, 256)) }
+		drwImage = func(m image.Image) image.Image {
+			im := m.(*image.Gray)
+			draw := func(u []uint32) {
+				for i := 0; i < len(u); i += 2 {
+					if x, y := (u[i]-x0)>>z, (u[i+1]-y0)>>z; x < 256 && y < 256 {
+						g := im.GrayAt(int(x), int(y))
+						if c := g.Y; c < 20 {
+							g.Y = 20
+						} else if c < 255 {
+							g.Y++
+						}
+						im.SetGray(int(x), int(y), g)
+					}
+				}
 			}
+			draw(t.bike)
+			draw(t.run)
+			return im
+		}
+	} else if tileType == "inferno" {
+		var p [256][256]byte
+		newImage = func() image.Image { return image.NewRGBA(image.Rect(0, 0, 256, 256)) }
+		drwImage = func(m image.Image) image.Image {
+			im := m.(*image.RGBA)
+			draw := func(u []uint32) {
+				for i := 0; i < len(u); i += 2 {
+					if x, y := (u[i]-x0)>>z, (u[i+1]-y0)>>z; x < 256 && y < 256 {
+						if c := p[int(x)][int(y)]; c < 255 {
+							p[int(x)][int(y)] = 1 + c
+						}
+					}
+				}
+				for i := 0; i < 256; i++ {
+					for k := 0; k < 256; k++ {
+						im.SetRGBA(i, k, inferno[p[i][k]])
+					}
+				}
+			}
+			draw(t.bike)
+			draw(t.run)
+			return im
+		}
+	} else {
+		newImage = func() image.Image { return image.NewRGBA(image.Rect(0, 0, 256, 256)) }
+		drwImage = func(m image.Image) image.Image {
+			im := m.(*image.RGBA)
+			draw := func(u []uint32, c color.RGBA) {
+				for i := 0; i < len(u); i += 2 {
+					if x, y := (u[i]-x0)>>z, (u[i+1]-y0)>>z; x < 256 && y < 256 {
+						im.SetRGBA(int(x), int(y), c)
+					}
+				}
+			}
+			draw(t.bike, green)
+			draw(t.run, red)
+			return im
 		}
 	}
-	draw()
-	u = t.run
-	c = red
-	draw()
-	png.Encode(w, m)
+	png.Encode(w, drwImage(newImage()))
 }
 
 func (f File) WebMercator() []uint32 {
