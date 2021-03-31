@@ -23,14 +23,16 @@ type Week struct {
 
 type YearWeek struct{ Year, Week int }
 
+func unix(sec int64) time.Time { return time.Unix(sec, 0).UTC() } // time.Unix returns time.Time with local timezone (force UTC)
+
 func Calendar(db DB) (cal Cal) {
 	m := make(map[YearWeek]int)
 	n := db.Len()
 	if n == 0 {
 		return nil
 	}
-	t := time.Unix(db.Head(0).Start, 0)
-	last := time.Unix(db.Head(n-1).Start, 0)
+	t := unix(db.Head(0).Start)
+	last := unix(db.Head(n - 1).Start)
 	for i := 0; ; i++ {
 		y, w := t.ISOWeek()
 		cal = append(cal, Week{YearWeek: YearWeek{y, w}})
@@ -70,7 +72,7 @@ func (c Cal) Write(w io.Writer, html bool, hi int) {
 			s, id := links(wk.Day[i])
 			ids = append(ids, id...)
 			for _, h := range wk.Day[i] {
-				date := time.Unix(h.Start, 0).Format("2006.01.02")
+				date := unix(h.Start).Format("2006.01.02")
 				tip = append(tip, fmt.Sprintf("%s %.0fkm %v", date, h.Meters/1000, time.Duration(h.Seconds)*time.Second))
 			}
 			fmt.Fprintf(tw, "%s\t", s)
@@ -188,11 +190,11 @@ func weekly(a [][]Header) (hours, km, Rkm, Bkm, hs, hr, hb float64) {
 }
 
 func (h Header) yearweek() YearWeek {
-	y, w := time.Unix(h.Start, 0).ISOWeek()
+	y, w := unix(h.Start).ISOWeek()
 	return YearWeek{y, w}
 }
 func (h Header) day() int { // 0..6 mon..sun
-	n := int(time.Unix(h.Start, 0).Weekday() - 1)
+	n := int(unix(h.Start).Weekday() - 1)
 	if n < 0 {
 		n += 7
 	}

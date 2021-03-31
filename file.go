@@ -90,7 +90,7 @@ func (h Header) Indexline() string { // entry(line) in db/index.txt
 	return fmt.Sprint(h.Start, h.Type, h.Seconds, h.Meters, h.Samples)
 }
 func (h Header) String() string { // list output
-	date := time.Unix(h.Start, 0).Format("2006.01.02T15:04:05")
+	date := unix(h.Start).Format("2006.01.02T15:04:05")
 	hh := int(h.Seconds / 3600)
 	mm := int(h.Seconds/60) - hh*60
 	ss := int(h.Seconds) - hh*3600 - mm*60
@@ -128,7 +128,7 @@ func do(a, b error) error {
 }
 
 func (f File) Table(w io.Writer) {
-	fmt.Fprintf(w, "Start:   %s (%d)\n", time.Unix(f.Start, 0).Format("2006.01.02T15:04:05"), f.Start)
+	fmt.Fprintf(w, "Start:   %s (%d)\n", unix(f.Start).Format("2006.01.02T15:04:05"), f.Start)
 	fmt.Fprintf(w, "Type:    %c\n", sport(f.Type))
 	fmt.Fprintf(w, "Seconds: %v (%s)\n", f.Seconds, time.Duration(f.Seconds)*time.Second)
 	fmt.Fprintf(w, "Meters:  %v\n", f.Meters)

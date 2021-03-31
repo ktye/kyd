@@ -13,8 +13,60 @@ import (
 )
 
 func importDB(dir string) {
-	h, r := importIndex(dir)
-	fmt.Println(len(h), len(r))
+	heads, race := importIndex(dir)
+	fmt.Println(len(heads), len(race))
+
+	for _, h := range heads {
+		if f := importJson(dir, h); f.Samples > 0 {
+			fmt.Println(unix(f.Start), f.Samples)
+		}
+	}
+}
+func importJson(dir string, h Header) (f File) {
+	f.Header = h
+	b, e := ioutil.ReadFile(filepath.Join(dir, unix(h.Start).Format("2006/20060102T150405.json")))
+	if e != nil {
+		return f
+	}
+	keys := []string{"start", "type", "time", "dist", "lap", "track", "points", "lat", "lon", "elev"}
+	for _, k := range keys {
+		b = bytes.Replace(b, []byte(k), []byte(`,"`+k+`"`), -1)
+	}
+	b = bytes.Replace(b, []byte{9}, nil, -1)
+	b = bytes.Replace(b, []byte{10}, nil, -1)
+	b = bytes.Replace(b, []byte{32}, nil, -1)
+	b = bytes.Replace(b, []byte(",}"), []byte("}"), -1)
+	b = bytes.Replace(b, []byte(",]"), []byte("]"), -1)
+	b = bytes.Replace(b, []byte("undefined"), []byte("-123456"), -1)
+
+	type tk struct {
+		Points int       `json:points`
+		Time   []float64 `json:time`
+		Dist   []float64 `json:dist`
+		Lat    []float64 `json:lat`
+		Lon    []float64 `json:lon`
+		Elev   []float64 `json:elev`
+	}
+	type l struct {
+		Start int     `json:start`
+		Time  int     `json:time`
+		Dist  float64 `json:dist`
+		Track tk      `json:track`
+	}
+	type t struct {
+		Start string `json:start`
+		Type  string `json:type`
+		Time  string `json:time`
+		Dist  string `json:dist`
+		Lap   []l    `json:lap`
+	}
+	fmt.Println(string(b))
+	var d t
+	fatal(json.Unmarshal(b, &d))
+
+	fmt.Println(d)
+	f.Samples = 1
+	return f
 }
 func importIndex(dir string) (h []Header, r []Race) {
 	index, e := ioutil.ReadFile(filepath.Join(dir, "index.json"))
