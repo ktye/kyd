@@ -15,11 +15,13 @@ type DB interface {
 	Len() int
 	Head(i int) Header
 	File(i int) (File, error)
+	Races() []Race
 }
 
 type DiskDB struct {
 	dir   string
 	index []Header
+	races []Race
 }
 
 func (d DiskDB) Len() int          { return len(d.index) }
@@ -31,8 +33,10 @@ func (d DiskDB) File(i int) (File, error) {
 	}
 	return Decode(b)
 }
+func (d DiskDB) Races() []Race          { return d.races }
 func (d DiskDB) indexpath() string      { return filepath.Join(d.dir, "index.txt") }
 func (d DiskDB) filepath(f File) string { return filepath.Join(d.dir, strconv.FormatInt(f.Start, 10)) }
+func (d DiskDB) racepath() string       { return filepath.Join(d.dir, "race.txt") }
 func (d DiskDB) Add(f File) error {
 	for i := 0; i < d.Len(); i++ {
 		if d.Head(i).Start == f.Start {
@@ -92,6 +96,12 @@ func EachH(db DB, g func(i int, h Header)) {
 		g(i, db.Head(i))
 	}
 }
+func EachR(db DB, g func(i int, r Race)) {
+	rc := db.Races()
+	for i, r := range rc {
+		g(i, r)
+	}
+}
 func Totals(db DB) (n int, t time.Duration, km float64, samples uint64) {
 	n = db.Len()
 	for i := 0; i < db.Len(); i++ {
@@ -123,6 +133,11 @@ func OpenDB(dir string) (DiskDB, error) {
 		}
 		d.index = append(d.index, h)
 	}
+	b, e = ioutil.ReadFile(d.racepath())
+	fatal(e)
+	r, e := ReadRaces(bytes.NewReader(b))
+	fatal(e)
+	d.races = r
 	return d, nil
 }
 
@@ -131,6 +146,7 @@ type SingleFile File
 func (s SingleFile) Len() int                 { return 1 }
 func (s SingleFile) Head(i int) Header        { return s.Header }
 func (s SingleFile) File(i int) (File, error) { return File(s), nil }
+func (s SingleFile) Races() []Race            { return nil }
 
 func Filter(d DB, g func(f File) bool) SubDB {
 	s := SubDB{d: d, m: make(map[int]int)}
@@ -169,3 +185,4 @@ type SubDB struct {
 func (d SubDB) Len() int                 { return len(d.m) }
 func (d SubDB) Head(i int) Header        { return d.d.Head(d.m[i]) }
 func (d SubDB) File(i int) (File, error) { return d.d.File(d.m[i]) }
+func (d SubDB) Races() []Race            { return d.Races() }

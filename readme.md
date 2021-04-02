@@ -72,9 +72,10 @@ type File struct {
 	Lon  []int32   // semicircles
 }
 type Race struct {
-	Start   int64   // unix time (seconds)
-	Type    string  // "800m"
-	Seconds float32 // seconds
-	Result  string  // "101/2048"
-	Name    string
+	Start  int64         // unix time (seconds)
+	Type   string        // "800m"
+	Time   time.Duration //
+	Result string        // "101/2048"
+	Name   string
 }
+```

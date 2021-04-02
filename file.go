@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"fmt"
@@ -28,20 +29,20 @@ type Header struct {
 	Samples uint64  // number of samples
 }
 type Race struct {
-	Start   int64   // unix time (seconds)
-	Type    string  // "800m"
-	Seconds float32 // seconds
-	Result  string  // "101/2048"
-	Name    string
+	Start  int64         // unix time (seconds)
+	Type   string        // "800m"
+	Time   time.Duration //
+	Result string        // "101/2048"
+	Name   string
 }
 
 func (f *File) alloc() {
 	samples := f.Samples
-	f.Time = make([]float32, samples)
-	f.Dist = make([]float32, samples)
-	f.Alt = make([]float32, samples)
-	f.Lat = make([]int32, samples)
-	f.Lon = make([]int32, samples)
+	(*f).Time = make([]float32, samples)
+	(*f).Dist = make([]float32, samples)
+	(*f).Alt = make([]float32, samples)
+	(*f).Lat = make([]int32, samples)
+	(*f).Lon = make([]int32, samples)
 }
 func (f File) Empty() bool { return f.Start == 0 }
 
@@ -95,6 +96,45 @@ func (h Header) String() string { // list output
 	mm := int(h.Seconds/60) - hh*60
 	ss := int(h.Seconds) - hh*3600 - mm*60
 	return fmt.Sprintf("%d %c %s %02d:%02d:%02d %v", h.Start, sport(h.Type), date, hh, mm, ss, h.Meters/1000)
+}
+func ReadRaces(r io.Reader) (races []Race, e error) {
+	s := bufio.NewScanner(r)
+	for s.Scan() {
+		t := s.Text()
+		if len(t) == 0 {
+			continue
+		}
+		err := func(s string) error { return fmt.Errorf("race: %s: %s", t, s) }
+		v := strings.Fields(t)
+		if len(v) < 5 {
+			return nil, err("fields")
+		}
+		var r Race
+		if time, e := time.Parse("20060102T150405", v[0]); e != nil {
+			return nil, err("parse start")
+		} else {
+			r.Start = time.Unix()
+		}
+		r.Type = v[1]
+		r.Time, e = time.ParseDuration(v[2])
+		if e != nil {
+			return nil, err("parse time")
+		}
+		r.Result = v[3]
+		r.Name = strings.Join(v[4:], " ")
+		races = append(races, r)
+	}
+	return races, nil
+}
+func (r Race) String() string {
+	if r.Type == "" {
+		r.Type = "-"
+	}
+	if r.Result == "" {
+		r.Result = "0/0"
+	}
+	start := unix(r.Start).Format("20060102T150405")
+	return fmt.Sprintf("%s %s %v %s %s", start, r.Type, r.Time, r.Result, r.Name)
 }
 func Decode(b []byte) (File, error) {
 	r := bytes.NewReader(b)

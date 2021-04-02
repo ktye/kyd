@@ -10,11 +10,12 @@ import (
 )
 
 func main() {
-	var add, list, cal, table, totals, serve bool
+	var add, list, race, cal, table, totals, serve bool
 	var id int64
 	var date, dir, here, addr, fit, imprt string
 	flag.BoolVar(&add, "add", false, "add/import")
 	flag.BoolVar(&list, "list", false, "print header")
+	flag.BoolVar(&race, "race", false, "print races")
 	flag.BoolVar(&cal, "cal", false, "print calendar")
 	flag.BoolVar(&table, "table", false, "print file as table")
 	flag.BoolVar(&totals, "totals", false, "print db totals")
@@ -33,7 +34,7 @@ func main() {
 	flag.Parse()
 
 	if imprt != "" {
-		importDB(imprt)
+		importDB(imprt, dir)
 		return
 	}
 
@@ -72,6 +73,8 @@ func main() {
 		fmt.Println("a", f.Start)
 	} else if list {
 		EachH(db, func(i int, h Header) { fmt.Println(h.String()) })
+	} else if race {
+		EachR(db, func(i int, r Race) { fmt.Println(r.String()) })
 	} else if cal {
 		Calendar(db).Write(os.Stdout, false, -1)
 	} else if table {
