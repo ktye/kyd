@@ -87,7 +87,7 @@ func Each(db DB, g func(i int, f File)) {
 		}
 	}
 }
-func EachHead(db DB, g func(i int, h Header)) {
+func EachH(db DB, g func(i int, h Header)) {
 	for i := 0; i < db.Len(); i++ {
 		g(i, db.Head(i))
 	}

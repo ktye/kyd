@@ -2,14 +2,13 @@
 <html>
 <head><meta charset="utf-8"><title>kyd</title>
 <link rel=icon href='favicon.png' />
+
 <style>
  html{font-family:monospace}
- //body{background-image:url('strip.png');}
- pre{background:#ffffea}
-
  img{float:left}
- th{text-align:left;}
+ #vd{border:1px solid black;}
 </style>
+
 </head><body>
 <script>
 function ge(x) { return document.getElementById(x) }
@@ -26,14 +25,13 @@ function stripclick(e){
 </script>
 
 <a id="stripln"><img src="strip.png" id="strip"></a>
-<pre> 
-kyd..
-</pre>
 {{.}}
 <a href="cal?" id="cal">cal</a>
 <a href="list?" id="list">list</a>
 <a href="index.html?tile=points">index(points)</a>
 <a href="index.html">index(topo)</a>
+<br>
+<a id="vdln"><img src="vd.png" id="vd"></a>
 
 <script>
 ge("cal").href += pa("tile")

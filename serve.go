@@ -86,7 +86,7 @@ func serveList(w http.ResponseWriter, r *http.Request) {
 		Tile, S string
 	}
 	var heads []t
-	EachHead(d, func(i int, h Header) { heads = append(heads, t{h.Start, tile, h.String()[11:]}) })
+	EachH(d, func(i int, h Header) { heads = append(heads, t{h.Start, tile, h.String()[11:]}) })
 	templ(w, "list.tmpl", heads)
 }
 func getRect(r *http.Request) func(f File) bool {
@@ -228,6 +228,34 @@ func serveStrip(w http.ResponseWriter, r *http.Request) {
 	defer db.Unlock()
 	w.Header().Set("Content-Type", "image/png")
 	if e := db.cal.WriteStrip(w); e != nil {
+		fmt.Println(e)
+	}
+}
+func serveVd(w http.ResponseWriter, r *http.Request) { // velocity-over-speed map
+	db.Lock()
+	defer db.Unlock()
+	w.Header().Set("Content-Type", "image/png")
+	width, height := 0, 300
+	EachH(db, func(i int, h Header) {
+		if d := int(h.Meters / 1000); d > width {
+			width = d
+		}
+	})
+	m := image.NewRGBA(image.Rect(0, 0, width, height))
+	w.Header().Set("Content-Type", "image/png")
+	EachH(db, func(i int, h Header) {
+		x, y := int(h.Meters/1000), height-int(25*h.Meters/h.Seconds)
+		switch h.Type {
+		case 1:
+			m.SetRGBA(x, y, red)
+		case 2:
+			m.SetRGBA(x, y, green)
+		case 5:
+			m.SetRGBA(x, y, blue)
+		}
+	})
+	w.Header().Set("Content-Type", "image/png")
+	if e := png.Encode(w, m); e != nil {
 		fmt.Println(e)
 	}
 }

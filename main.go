@@ -71,7 +71,7 @@ func main() {
 		fatal(db.Add(File(f)))
 		fmt.Println("a", f.Start)
 	} else if list {
-		EachHead(db, func(i int, h Header) { fmt.Println(h.String()) })
+		EachH(db, func(i int, h Header) { fmt.Println(h.String()) })
 	} else if cal {
 		Calendar(db).Write(os.Stdout, false, -1)
 	} else if table {
