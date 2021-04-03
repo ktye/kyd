@@ -86,8 +86,8 @@ func Each(db DB, g func(i int, f File)) {
 		f, e := db.File(i)
 		if e == nil {
 			g(i, f)
-		} else {
-			fmt.Fprintln(os.Stderr, e)
+		} else if os.IsNotExist(e) == false {
+			fmt.Fprintf(os.Stderr, "%d: %s\n", f.Start, e)
 		}
 	}
 }

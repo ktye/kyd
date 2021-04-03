@@ -186,6 +186,8 @@ func sport(x uint32) (r byte) {
 		r = 'R'
 	case 2:
 		r = 'B'
+	case 5:
+		r = 'S'
 	}
 	return r
 }

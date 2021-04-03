@@ -10,9 +10,9 @@ import (
 )
 
 func main() {
-	var add, list, race, cal, table, totals, serve bool
+	var add, list, race, cal, table, totals, serve, unics bool
 	var id int64
-	var date, dir, here, addr, fit, imprt string
+	var date, dir, here, addr, fit, imprt, diff string
 	flag.BoolVar(&add, "add", false, "add/import")
 	flag.BoolVar(&list, "list", false, "print header")
 	flag.BoolVar(&race, "race", false, "print races")
@@ -21,12 +21,14 @@ func main() {
 	flag.BoolVar(&totals, "totals", false, "print db totals")
 	flag.StringVar(&here, "here", "", "lat,lon (have i been here before?)")
 	flag.BoolVar(&serve, "serve", false, "run as http server")
+	flag.BoolVar(&unics, "unix", false, "print id as date")
 	flag.Int64Var(&id, "id", 0, "use single file id")
 	flag.StringVar(&date, "date", "", "time span 2020.09.12-2020.08.17 or year or year.month")
 	flag.StringVar(&dir, "dir", "./db/", "db directory")
 	flag.StringVar(&addr, "http", "127.0.0.1:2021", "serve on this address")
 	flag.StringVar(&fit, "fit", "", "fit file")
 	flag.StringVar(&imprt, "import", "", "import old db")
+	flag.StringVar(&diff, "diff", "", "compare fit dir against the db")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "github.com/ktye/kyd")
 		flag.PrintDefaults()
@@ -35,6 +37,10 @@ func main() {
 
 	if imprt != "" {
 		importDB(imprt, dir)
+		return
+	}
+	if unics != false {
+		fmt.Println(unix(id).Format("20060102T150405"))
 		return
 	}
 
@@ -60,6 +66,10 @@ func main() {
 	}
 	if here != "" {
 		db = Here(db, here)
+	}
+	if diff != "" {
+		fitDiff(db, diff)
+		return
 	}
 
 	if add {

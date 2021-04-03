@@ -16,28 +16,33 @@ import (
 func importDB(src, dst string) {
 	if d, e := ioutil.ReadDir(dst); e != nil {
 		fatal(e)
-	} else if len(d) != 2 {
-		fatal(fmt.Errorf("import: dst is not empty: %s (should contain an empty index/race.txt)", dst))
+	} else if len(d) != 0 {
+		fatal(fmt.Errorf("%s: import: dst is not empty", dst))
 	}
-	if d, e := ioutil.ReadFile(filepath.Join(dst, "index.txt")); len(d) != 0 || e != nil {
-		fatal(fmt.Errorf("import: dst must contain an empty index.txt #%d e=%v", len(d), e))
-	}
+	fatal(ioutil.WriteFile(filepath.Join(dst, "index.txt"), nil, 0644))
+	fatal(ioutil.WriteFile(filepath.Join(dst, "race.txt"), nil, 0644))
 
 	heads, race := importIndex(src)
 	fmt.Println(len(heads), len(race))
 
 	db, e := OpenDB(dst)
 	fatal(e)
-
+	notrack := 0
 	for _, h := range heads {
 		if f, e := importJson(src, h); e == nil || os.IsNotExist(e) {
-			db.Add(f)
-			if (f.Samples == 0) != os.IsNotExist(e) {
-				fatal(fmt.Errorf("%s: %d sample, err = %v\n", f.Header.String(), f.Samples, e))
-			}
 			if f.Samples > 0 {
 				fmt.Println(f.Start, f.Samples)
+				if len(f.Dist) > 0 && len(f.Alt) == 0 && len(f.Lat) == 0 && len(f.Lon) == 0 {
+					f.Alt = nans32(len(f.Dist))
+					f.Lat = invalids(len(f.Dist))
+					f.Lon = invalids(len(f.Dist))
+					notrack++
+					fmt.Println("no track")
+				}
 			}
+			db.Add(f)
+		} else if os.IsNotExist(e) {
+			fmt.Println(e)
 		} else {
 			fatal(e)
 		}
@@ -49,10 +54,12 @@ func importDB(src, dst string) {
 	for _, r := range race {
 		fmt.Fprintln(f, r.String())
 	}
+	fmt.Println("no track", notrack)
 }
 func importJson(dir string, h Header) (f File, err error) {
 	f.Header = h
-	b, e := ioutil.ReadFile(filepath.Join(dir, unix(h.Start).Format("2006/20060102T150405.json")))
+	name := filepath.Join(dir, unix(h.Start).Format("2006/20060102T150405.json"))
+	b, e := ioutil.ReadFile(name)
 	if e != nil {
 		return f, e
 	}
@@ -103,13 +110,21 @@ func importJson(dir string, h Header) (f File, err error) {
 		tk := l.Track
 		f.Time = append(f.Time, jfloats32(tk.Time)...)
 		f.Dist = append(f.Dist, jfloats32(tk.Dist)...)
+		f.Alt = append(f.Alt, jfloats32(tk.Elev)...)
 		f.Lat = append(f.Lat, jsemis(tk.Lat)...)
-		f.Lon = append(f.Lat, jsemis(tk.Lon)...)
+		f.Lon = append(f.Lon, jsemis(tk.Lon)...)
 	}
 
 	samples := len(f.Time)
-	if len(f.Dist) != samples || len(f.Alt) != samples || len(f.Lat) != samples || len(f.Lon) != samples {
-		return f, fmt.Errorf("uniform")
+	if len(f.Dist) != samples {
+		return f, fmt.Errorf("%s: uniform/dist", name)
+	}
+	n := len(f.Alt)
+	if len(f.Lat) != n || len(f.Lon) != n {
+		return f, fmt.Errorf("%s: uniform/alt/lat/lon", name)
+	}
+	if n > 0 && n != samples {
+		return f, fmt.Errorf("%s: uniform/samples %d/%d", name, n, samples)
 	}
 
 	f.Samples = uint64(samples)
@@ -217,6 +232,13 @@ func importIndex(dir string) (h []Header, r []Race) {
 
 type jfloat float64
 
+func nans32(n int) []float32 {
+	r := make([]float32, n)
+	for i := range r {
+		r[i] = float32(math.NaN())
+	}
+	return r
+}
 func jfloats32(j []jfloat) []float32 {
 	r := make([]float32, len(j))
 	for i, f := range j {
@@ -236,6 +258,13 @@ func (j jfloat) semi() int32 {
 		return 0x7FFFFFFF
 	}
 	return int32(math.Pow(2, 31) * float64(j) / 180.0)
+}
+func invalids(n int) []int32 {
+	r := make([]int32, n)
+	for i := range r {
+		r[i] = 0x7FFFFFFF
+	}
+	return r
 }
 
 func (f *jfloat) UnmarshalJSON(b []byte) error {
