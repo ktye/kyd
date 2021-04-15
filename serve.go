@@ -43,6 +43,8 @@ func server(addr string, a DB) {
 	template.ParseFS(www, "*.tmpl")
 	http.HandleFunc("/index.html", serveIndex)
 	http.HandleFunc("/strip.png", serveStrip)
+	http.HandleFunc("/vd", serveVd)
+	http.HandleFunc("/vd.png", serveVdPng)
 	http.HandleFunc("/cal", serveCal)
 	http.HandleFunc("/list", serveList)
 	http.HandleFunc("/head", serveHead)
@@ -231,7 +233,24 @@ func serveStrip(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(e)
 	}
 }
-func serveVd(w http.ResponseWriter, r *http.Request) { // velocity-over-speed map
+func serveVd(w http.ResponseWriter, r *http.Request) {
+	db.Lock()
+	defer db.Unlock()
+	atoi := func(s string) int { r, _ := strconv.Atoi(s); return r }
+	height := 300
+	x := atoi(r.URL.Query().Get("x"))
+	y := atoi(r.URL.Query().Get("y"))
+	min := 1000
+	var hmin Header
+	EachH(db, func(i int, h Header) {
+		xi, yi := int(h.Meters/1000), height-int(25*h.Meters/h.Seconds)
+		if d := (x-xi)*(x-xi) + (y-yi)*(y-yi); d < min {
+			min, hmin = d, h
+		}
+	})
+	http.Redirect(w, r, "map.html?id="+strconv.FormatInt(hmin.Start, 10)+pa(r, "tile"), 301)
+}
+func serveVdPng(w http.ResponseWriter, r *http.Request) { // velocity-over-speed map
 	db.Lock()
 	defer db.Unlock()
 	w.Header().Set("Content-Type", "image/png")

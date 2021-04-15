@@ -78,7 +78,7 @@ func (c Cal) Write(w io.Writer, html bool, hi int) {
 			fmt.Fprintf(tw, "%s\t", s)
 		}
 		h, km, rkm, bkm, hs, hr, hb := weekly(wk.Day[:])
-		hist := bar(hs, 'X') + bar(hr, 'Y') + bar(hb, 'Z')
+		hist := bar(hs, 'X') + bar(hb, 'Y') + bar(hr, 'Z')
 		th, tkm, trkm, tbkm = th+h, tkm+km, trkm+rkm, tbkm+bkm
 		fmt.Fprintf(tw, "%.1f\t%.0f\t%.0f\t%.0f\t%s\n", h, km, rkm, bkm, hist)
 	}

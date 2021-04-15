@@ -20,7 +20,16 @@ function toggle(id,e){e=ge(id);e.style.display=(e.style.display=='block')?'none'
 function stripclick(e){
  var y=e.pageY-e.target.offsetTop
  ge("stripln").href="cal?w="+y+pa("tile")+"#hi"
- console.log(y)
+}
+function vdclick(e){
+ var x=e.pageX-e.target.offsetLeft
+ var y=e.pageY-e.target.offsetTop
+ ge("vdln").href="vd?x="+x+"&y="+y+pa("tile")
+}
+function vdmove(e){
+ var x=e.pageX-e.target.offsetLeft
+ var y=e.pageY-e.target.offsetTop
+ ge("caption").innerText = x + "km " + (3.6/25*(300-y)) + " km/h"
 }
 </script>
 
@@ -31,12 +40,14 @@ function stripclick(e){
 <a href="index.html?tile=points">index(points)</a>
 <a href="index.html">index(topo)</a>
 <br>
-<a id="vdln"><img src="vd.png" id="vd"></a>
+<a id="vdln"><img src="vd.png" id="vd"></a><span id="caption"></span>
 
 <script>
 ge("cal").href += pa("tile")
 ge("list").href += pa("tile")
 ge("strip").addEventListener("click", stripclick)
+ge("vd").addEventListener("click", vdclick)
+ge("vd").addEventListener("mousemove", vdmove)
 
 </script>
 
