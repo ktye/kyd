@@ -10,27 +10,36 @@ import (
 func fitDiff(db DB, dir string) {
 	files, e := os.ReadDir(dir)
 	fatal(e)
+	dh := 0
 	for _, fi := range files {
 		if fi.IsDir() == false {
 			name := filepath.Join(dir, fi.Name())
 			f, e := ReadFit(name)
 			fatal(e)
-			fmt.Println(f.Samples)
+			//fmt.Println(f.Start, f.Samples, name)
 			g, e := Find(db, f.Start)
-			fatal(e)
-			fatal(diffFile(name, f, g))
+			if e != nil {
+				g, e = Find(db, f.Start+3600)
+				dh++
+			}
+			if e != nil {
+				fmt.Println(f.Start, f.Samples, name, e)
+			} else {
+				fatal(diffFile(name, f, g))
+			}
 		}
 	}
+	fmt.Println("dh:", dh)
 }
 
 func diffFile(name string, f, g File) error {
-	if f.Start != g.Start {
+	if f.Start != g.Start && f.Start+3600 != g.Start {
 		return fmt.Errorf("%s: Start %v %v", name, f.Start, g.Start)
 	}
 	if f.Type != g.Type {
 		return fmt.Errorf("%s: Type %v %v", name, f.Type, g.Type)
 	}
-	if round(f.Seconds) != g.Seconds {
+	if math.Abs(float64(round(f.Seconds)-g.Seconds)) > 1 {
 		return fmt.Errorf("%s: Seconds %v %v", name, f.Seconds, g.Seconds)
 	}
 	if f.Meters != g.Meters {
