@@ -47,12 +47,12 @@ func server(addr string, a DB) {
 	http.HandleFunc("/vd.png", serveVdPng)
 	http.HandleFunc("/cal", serveCal)
 	http.HandleFunc("/list", serveList)
+	http.HandleFunc("/race", serveRace)
 	http.HandleFunc("/head", serveHead)
 	http.HandleFunc("/json", serveJson)
 	http.HandleFunc("/alt", serveAlt)
 	http.HandleFunc("/ll", serveLatLon)
 	http.HandleFunc("/tile/", serveTile)
-
 	fatal(http.ListenAndServe(addr, nil))
 }
 func templ(w io.Writer, file string, data interface{}) {
@@ -89,6 +89,20 @@ func serveList(w http.ResponseWriter, r *http.Request) {
 	}
 	var heads []t
 	EachH(d, func(i int, h Header) { heads = append(heads, t{h.Start, tile, h.String()[11:]}) })
+	templ(w, "list.tmpl", heads)
+}
+func serveRace(w http.ResponseWriter, r *http.Request) {
+	db.Lock()
+	defer db.Unlock()
+	tile := r.URL.Query().Get("tile")
+	type t struct {
+		Id      int64
+		Tile, S string
+	}
+	var heads []t
+	for _, r := range db.Races() {
+		heads = append(heads, t{r.Start, tile, r.String()})
+	}
 	templ(w, "list.tmpl", heads)
 }
 func getRect(r *http.Request) func(f File) bool {

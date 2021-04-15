@@ -18,7 +18,8 @@ type Cal []Week // calendar
 
 type Week struct {
 	YearWeek
-	Day [7][]Header
+	Day   [7][]Header
+	Races []Race
 }
 
 type YearWeek struct{ Year, Week int }
@@ -47,6 +48,13 @@ func Calendar(db DB) (cal Cal) {
 		k := m[h.yearweek()]
 		d := h.day()
 		cal[k].Day[d] = append(cal[k].Day[d], h)
+	}
+	for _, r := range db.Races() {
+		y, w := unix(r.Start).ISOWeek()
+		wk := YearWeek{y, w}
+		if k, o := m[wk]; o {
+			cal[k].Races = append(cal[k].Races, r)
+		}
 	}
 	return cal
 }
@@ -77,10 +85,16 @@ func (c Cal) Write(w io.Writer, html bool, hi int) {
 			}
 			fmt.Fprintf(tw, "%s\t", s)
 		}
+		rs := ""
+		if html {
+			for _, r := range wk.Races {
+				rs += fmt.Sprintf("<a_id=\"race#%d\">%s</a>", r.Start, strings.ToLower(r.Name))
+			}
+		}
 		h, km, rkm, bkm, hs, hr, hb := weekly(wk.Day[:])
 		hist := bar(hs, 'X') + bar(hb, 'Y') + bar(hr, 'Z')
 		th, tkm, trkm, tbkm = th+h, tkm+km, trkm+rkm, tbkm+bkm
-		fmt.Fprintf(tw, "%.1f\t%.0f\t%.0f\t%.0f\t%s\n", h, km, rkm, bkm, hist)
+		fmt.Fprintf(tw, "%.1f\t%.0f\t%.0f\t%.0f\t%s\t%s\n", h, km, rkm, bkm, hist, rs)
 	}
 	fmt.Fprintf(tw, "%dwk\t\t\t\t\t\t\t\t", len(c))
 	fmt.Fprintf(tw, "%.0fh\t%.0fkm\t%.0fr\t%.0fb\n", th, tkm, trkm, tbkm)
@@ -96,6 +110,7 @@ func (c Cal) Write(w io.Writer, html bool, hi int) {
 		i := 0
 		for s.Scan() {
 			t := strings.Replace(s.Text(), " ", "&nbsp;", -1)
+			t = strings.Replace(t, "_", " ", -1)
 			if i == hi {
 				t = `<a id="hi" class="hi">` + t[:7] + `</a>` + t[7:]
 			}
@@ -226,6 +241,7 @@ var all = document.querySelectorAll('a')
 for (var i=0; i<all.length; i++) {
  var id=all[i].id; var a=all[i]
  a.href = (id.length)?"map.html?id="+id+p:""
+ if(id.startsWith("race#")) a.href=id
  if(id=="hi")a.href=""
 }
 </script>
