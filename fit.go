@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io/ioutil"
+	"time"
 
 	"github.com/tormoder/fit"
 )
@@ -18,7 +19,10 @@ func ReadFit(file string) (f File, e error) {
 	var t *fit.File
 	t, e = fit.Decode(bytes.NewReader(b))
 	if e != nil {
-		return
+		fmt.Println(e) // use partial file
+		if t == nil {
+			return
+		}
 	}
 
 	var a *fit.ActivityFile
@@ -32,8 +36,11 @@ func ReadFit(file string) (f File, e error) {
 		return f, fmt.Errorf("file has no records")
 	}
 	ses := a.Sessions
-	if len(ses) < 1 {
-		return f, fmt.Errorf("file has no sessions")
+	var start time.Time
+	var sport uint32
+	if len(ses) > 0 {
+		start = ses[0].StartTime
+		sport = uint32(ses[0].Sport)
 	}
 
 	var seconds, meters uint32
@@ -43,10 +50,12 @@ func ReadFit(file string) (f File, e error) {
 	}
 
 	samples := len(rec)
-	start := ses[0].StartTime
+	if start.IsZero() && samples > 0 {
+		start = rec[0].Timestamp
+	}
 	f.Header = Header{
 		Start:   start.Unix(),
-		Type:    uint32(ses[0].Sport),
+		Type:    sport,
 		Seconds: float32(seconds) / 1000.0,
 		Meters:  float32(meters) / 100.0,
 		Samples: uint64(samples),

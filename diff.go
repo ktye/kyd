@@ -15,6 +15,9 @@ func fitDiff(db DB, dir string) {
 		if fi.IsDir() == false {
 			name := filepath.Join(dir, fi.Name())
 			f, e := ReadFit(name)
+			if e != nil {
+				fmt.Println(name, e)
+			}
 			fatal(e)
 			//fmt.Println(f.Start, f.Samples, name)
 			g, e := Find(db, f.Start)
@@ -25,7 +28,10 @@ func fitDiff(db DB, dir string) {
 			if e != nil {
 				fmt.Println(f.Start, f.Samples, name, e)
 			} else {
-				fatal(diffFile(name, f, g))
+				e = diffFile(name, f, g)
+				if e != nil {
+					fmt.Println(f.Start, f.Samples, name, e)
+				}
 			}
 		}
 	}
