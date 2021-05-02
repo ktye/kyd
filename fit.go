@@ -65,7 +65,7 @@ func ReadFit(file string) (f File, e error) {
 	for i, r := range rec {
 		f.Time[i] = float32(r.Timestamp.Sub(start).Seconds())
 		f.Dist[i] = float32(r.GetDistanceScaled())
-		f.Alt[i] = float32(r.GetAltitudeScaled())
+		f.Alt[i] = float32(r.GetEnhancedAltitudeScaled())
 		f.Lat[i] = r.PositionLat.Semicircles()
 		f.Lon[i] = r.PositionLong.Semicircles()
 	}
