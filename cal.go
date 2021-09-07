@@ -230,7 +230,7 @@ const calHead = `<!DOCTYPE html>
 </head><body>
 <pre>`
 
-const calTail = `</pre>
+const calTail = `</pre><div id="bottom"></div>
 
 <script>
 function gu(x) { return (new URL(document.location)).searchParams.get(x) } // or null
@@ -244,6 +244,7 @@ for (var i=0; i<all.length; i++) {
  if(id.startsWith("race#")) a.href=id
  if(id=="hi")a.href=""
 }
+document.getElementById("bottom").scrollIntoView()
 </script>
 
 </body></html>
