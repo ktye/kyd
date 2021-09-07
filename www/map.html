@@ -1,33 +1,34 @@
-<!DOCTYPE html>
 <html>
 <head><meta charset="utf-8"><title>kyd</title></head>
 <link rel=icon href='favicon.png' />
 
 <link rel="stylesheet" href="leaflet.css" />
 <script src="leaflet.js"></script>
+<script src="sync.js"></script>
 
 <style>
 body{ padding: 0; margin: 0; overflow:hidden; font-family:monospace; }
-html, body, #map { height: 100%; width: 100vw; } 
+html, body { height: 100%; width: 100vw; } 
 pre { margin:0;float:left;}
 a   { float:right;}
 #alt{ position:absolute; right:0; top:0; z-index:-1 }
 #slide{ top:100; width: 100%; z-index:10;}
-#map { background-color: white; }
+#map { width:50%; height:100%; float:left; background-color:"white" }
+#rmap{ width:50%; height:100%; float:right }
 </style>
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 </head>
 <body>
 <pre id="head"></pre>
-<a href="index.html">index </a>
-<a href="cal">cal</a>
+<a href="index.html">index&nbsp;</a>
+<a href="cal">cal&nbsp;</a>
 <a id="rect"></a>
 <img id="alt" width="600" height="50"></image>
 <input type="range" min="0" max="100" value="50" class="slider" id="slide">
 
-<div id="map">
-</div>
+<div id="map"></div>
+<div id="rmap"></div>
 <script>
 
 function ge(x) { return document.getElementById(x) }
@@ -51,7 +52,8 @@ L.CustomBoxZoom = L.Map.BoxZoom.extend({
 })
 L.Map.addInitHook('addHandler', 'customBoxZoom', L.CustomBoxZoom)
 
-var map = L.map('map', {boxZoom:false, customBoxZoom:true}) 
+var  map = L.map( 'map', {boxZoom:false, customBoxZoom:true, center:[0,0], zoom:13}) 
+var rmap = L.map('rmap', {boxZoom:false, customBoxZoom:true, center:[0,0], zoom:13}) 
 map.on('boxzoomend', function(e) {
  var b = e.boxZoomBounds
  var rect = ge("rect")
@@ -61,34 +63,37 @@ map.on('boxzoomend', function(e) {
 
 
 var mark
-function addpath(coords){
+function addpath(m, coords){
  var polyline = L.polyline(coords, {color: "#0000e6"})
- polyline.addTo(map);
- map.fitBounds(polyline.getBounds());
+ polyline.addTo(m);
+ m.fitBounds(polyline.getBounds());
  var slide = ge("slide")
  slide.max = coords.length
  slide.oninput = function(){
   var ll = coords[this.value]
   if(mark==undefined){
-   mark = L.circleMarker(ll,{radius:3,color:'red'}).addTo(map)
+   mark = L.circleMarker(ll,{radius:3,color:'red'}).addTo(m)
   }
   mark.setLatLng(ll)
  }
 }
 
 var tile = gu("tile")
-var tilesrc = (tile)?"tile/"+tile+"/{z}/{x}/{y}.png":"https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
+//var tilesrc = (tile)?"tile/"+tile+"/{z}/{x}/{y}.png":"https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png"
 
-L.tileLayer(tilesrc, {}).addTo(map);
+L.tileLayer("tile/"+tile+"/{z}/{x}/{y}.png", {}).addTo(map);
+L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {}).addTo(rmap);
 
 var ids = gu("id").split(",")
-for(var i=0;i<ids.length;i++)fetch("ll?id="+ids[i]).then(r=>r.json()).then(d=>addpath(d))
+for(var i=0;i<ids.length;i++)fetch("ll?id="+ids[i]).then(r=>r.json()).then(d=>{addpath(map,d);addpath(rmap,d)})
+
+map.sync(rmap, {syncCursor: true})
+rmap.sync(map, {syncCursor: true})
 
 function addHead(s){var t=ge("head").innerText;ge("head").innerText=(t.length>0)?t+"\n"+s:s}
 for(var i=0;i<ids.length;i++)fetch("head?id="+ids[i]).then(r=>r.text()).then(d=>addHead(d.trim()))
 
 ge("alt").src = "alt?id="+ids[0]
-
 
 </script>
 </body>
