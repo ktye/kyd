@@ -185,4 +185,4 @@ type SubDB struct {
 func (d SubDB) Len() int                 { return len(d.m) }
 func (d SubDB) Head(i int) Header        { return d.d.Head(d.m[i]) }
 func (d SubDB) File(i int) (File, error) { return d.d.File(d.m[i]) }
-func (d SubDB) Races() []Race            { return d.Races() }
+func (d SubDB) Races() []Race            { return nil }
