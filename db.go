@@ -81,6 +81,28 @@ func Find(db DB, id int64) (f File, e error) {
 	}
 	return f, fmt.Errorf("id not found: %d", id)
 }
+func NextId(db DB, id int64, prev bool) int64 {
+	n := db.Len()
+	for i := 0; i < n; i++ {
+		h := db.Head(i)
+		if h.Start == id {
+			if prev {
+				if i == 0 {
+					return id
+				} else {
+					return db.Head(i - 1).Start
+				}
+			} else {
+				if i == n-1 {
+					return id
+				} else {
+					return db.Head(i + 1).Start
+				}
+			}
+		}
+	}
+	return 0 // not reached
+}
 func Each(db DB, g func(i int, f File)) {
 	for i := 0; i < db.Len(); i++ {
 		f, e := db.File(i)

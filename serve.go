@@ -52,6 +52,7 @@ func server(addr string, a DB) {
 	http.HandleFunc("/json", serveJson)
 	http.HandleFunc("/alt", serveAlt)
 	http.HandleFunc("/ll", serveLatLon)
+	http.HandleFunc("/next", serveNext)
 	http.HandleFunc("/tile/", serveTile)
 	fatal(http.ListenAndServe(addr, nil))
 }
@@ -221,6 +222,11 @@ func serveLatLon(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Println("ll", e)
 	}
+}
+func serveNext(w http.ResponseWriter, r *http.Request) {
+	db.Lock()
+	defer db.Unlock()
+	fmt.Fprintf(w, "%d", NextId(db, getId(r), r.URL.Query().Get("prev") == "true"))
 }
 func serveTile(w http.ResponseWriter, r *http.Request) {
 	v := strings.Split(r.URL.Path, "/") // /tile/grey/11/1023/234.png or /tile/points/$z/$x/$y.png
