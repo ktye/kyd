@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	var add, list, race, cal, table, totals, serve, unics bool
+	var add, list, race, cal, table, totals, serve, unics, years bool
 	var id int64
 	var date, dir, here, addr, fit, imprt, diff string
 	flag.BoolVar(&add, "add", false, "add/import")
@@ -29,6 +29,7 @@ func main() {
 	flag.StringVar(&fit, "fit", "", "fit file")
 	flag.StringVar(&imprt, "import", "", "import old db")
 	flag.StringVar(&diff, "diff", "", "compare fit dir against the db")
+	flag.BoolVar(&years, "years", false, "year totals")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "github.com/ktye/kyd")
 		flag.PrintDefaults()
@@ -92,6 +93,8 @@ func main() {
 	} else if totals {
 		n, t, km, samples := Totals(db)
 		fmt.Printf("#%d %v %.0fkm %dsamples\n", n, t, km, samples)
+	} else if years {
+		Years(db)
 	} else if serve {
 		server(addr, db)
 

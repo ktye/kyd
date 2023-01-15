@@ -134,6 +134,32 @@ func Totals(db DB) (n int, t time.Duration, km float64, samples uint64) {
 	}
 	return
 }
+func Years(db DB) {
+	R := make(map[int]float64)
+	B := make(map[int]float64)
+	H := make(map[int]time.Duration)
+	y0, y1 := 3000, 0
+	for i := 0; i < db.Len(); i++ {
+		h := db.Head(i)
+		y := unix(h.Start).Year()
+		if y < y0 {
+			y0 = y
+		}
+		if y > y1 {
+			y1 = y
+		}
+		H[y] += time.Duration(int64(h.Seconds)) * time.Second
+		if h.Type == 1 {
+			R[y] += float64(h.Meters) / 1000
+		} else if h.Type == 2 {
+			B[y] += float64(h.Meters) / 1000
+		}
+	}
+	fmt.Printf("year R/km B/km H\n")
+	for y := y0; y <= y1; y++ {
+		fmt.Printf("%d %4.0f %4.0f %3d\n", y, R[y], B[y], H[y]/time.Hour)
+	}
+}
 
 func OpenDB(dir string) (DiskDB, error) {
 	d := DiskDB{dir: dir}
