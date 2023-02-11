@@ -10,13 +10,14 @@ import (
 )
 
 func main() {
-	var add, list, race, cal, table, totals, serve, unics, years bool
+	var add, list, race, cal, k, table, totals, serve, unics, years bool
 	var id int64
 	var date, dir, here, addr, fit, imprt, diff string
 	flag.BoolVar(&add, "add", false, "add/import")
 	flag.BoolVar(&list, "list", false, "print header")
 	flag.BoolVar(&race, "race", false, "print races")
 	flag.BoolVar(&cal, "cal", false, "print calendar")
+	flag.BoolVar(&k, "k", false, "print k table")
 	flag.BoolVar(&table, "table", false, "print file as table")
 	flag.BoolVar(&totals, "totals", false, "print db totals")
 	flag.StringVar(&here, "here", "", "lat,lon (have i been here before?)")
@@ -88,6 +89,8 @@ func main() {
 		EachR(db, func(i int, r Race) { fmt.Println(r.String()) })
 	} else if cal {
 		Calendar(db).Write(os.Stdout, false, -1)
+	} else if k {
+		K(db)
 	} else if table {
 		Each(db, func(i int, f File) { f.Table(os.Stdout) })
 	} else if totals {
