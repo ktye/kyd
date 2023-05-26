@@ -10,11 +10,12 @@ import (
 )
 
 func main() {
-	var add, list, race, cal, bitmap, k, table, totals, serve, unics, years bool
+	var add, list, news, race, cal, bitmap, k, table, totals, serve, unics, years bool
 	var id int64
 	var date, dir, here, addr, fit, imprt, diff string
 	flag.BoolVar(&add, "add", false, "add/import")
 	flag.BoolVar(&list, "list", false, "print header")
+	flag.BoolVar(&news, "news", false, "print list with new km")
 	flag.BoolVar(&race, "race", false, "print races")
 	flag.BoolVar(&cal, "cal", false, "print calendar")
 	flag.BoolVar(&bitmap, "bitmap", false, "updating bitmap")
@@ -86,6 +87,27 @@ func main() {
 		fmt.Println("a", f.Start)
 	} else if list {
 		EachH(db, func(i int, h Header) { fmt.Println(h.String()) })
+	} else if news {
+		m := make(map[uint64]bool)
+		db = Filter(db, func(f File) bool { return f.Samples > 0 })
+		Each(db, func(i int, f File) {
+			u := f.WebMercator()
+			w := make([]uint64, len(u)/2)
+			for j := 0; j < len(u); j += 2 {
+				w[j/2] = uint64(u[j]>>11)<<32 | uint64(u[1+j]>>11)
+			}
+			s := 0
+			for _, h := range w { //zoom level 13: >>=11
+				if m[h] == false {
+					s++
+				}
+			}
+			for _, h := range w {
+				m[h] = true
+			}
+			newkm := float64(f.Meters) * 0.001 * 2 * float64(s) / float64(len(u))
+			fmt.Printf("%s %6.2f\n", f.String(), newkm)
+		})
 	} else if race {
 		EachR(db, func(i int, r Race) { fmt.Println(r.String()) })
 	} else if cal {

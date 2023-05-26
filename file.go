@@ -95,7 +95,7 @@ func (h Header) String() string { // list output
 	hh := int(h.Seconds / 3600)
 	mm := int(h.Seconds/60) - hh*60
 	ss := int(h.Seconds) - hh*3600 - mm*60
-	return fmt.Sprintf("%d %c %s %02d:%02d:%02d %v", h.Start, sport(h.Type), date, hh, mm, ss, h.Meters/1000)
+	return fmt.Sprintf("%d %c %s %02d:%02d:%02d %6.2f", h.Start, sport(h.Type), date, hh, mm, ss, h.Meters/1000)
 }
 func ReadRaces(r io.Reader) (races []Race, e error) {
 	s := bufio.NewScanner(r)
