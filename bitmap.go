@@ -79,8 +79,7 @@ func semis(lat, lon float64) (int32, int32) {
 
 const bitmapHtml = `<!DOCTYPE html>
 <head><meta charset="utf-8"><title></title>
-<style>
-</style>
+<style>*{background:black}</style>
 </head>
 <body onload="init()">
 <canvas id="cnv" width="1024" height="1024"></canvas>
@@ -88,7 +87,8 @@ const bitmapHtml = `<!DOCTYPE html>
 function init(){
  fetch("x").then(r=>r.json()).then(r=>{
   let c=document.getElementById("cnv").getContext("2d")
-  c.fillStyle="black";c.fillRect(0,0,1024,1024);c.fillStyle="white"
+  //c.fillStyle="black";c.fillRect(0,0,1024,1024);
+  c.fillStyle="white"
   let i=0;
   let dot=()=>{
    c.fillRect(r[  i]>>10,r[  i]&1023,1,1)
