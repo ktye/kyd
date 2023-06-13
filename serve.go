@@ -34,6 +34,7 @@ type hdb struct {
 func server(addr string, a DB) {
 	db = hdb{DB: a, cal: Calendar(a)}
 	tile = NewTile(db)
+	makenews(db)
 	fmt.Println(addr+"/index.html", len(tile.run)+len(tile.bike))
 
 	var e error
@@ -216,7 +217,14 @@ func serveLatLon(w http.ResponseWriter, r *http.Request) {
 				p = append(p, [2]float64{la, lo})
 			}
 		}
-		if e := json.NewEncoder(w).Encode(p); e != nil {
+		d := struct {
+			P [][2]float64
+			N []int8
+		}{
+			P: p,
+			N: getnews(f),
+		}
+		if e := json.NewEncoder(w).Encode(d); e != nil {
 			fmt.Println("ll", e)
 		}
 	} else {
