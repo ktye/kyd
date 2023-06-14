@@ -65,9 +65,22 @@ map.on('boxzoomend', function(e) {
 })
 
 var mark
-function addpath(m, coords){
+function addpath(m, coords, news){
  var polyline = L.polyline(coords, {color: "#0000e6"})
  polyline.addTo(m);
+ 
+ let last=false,cur
+ let newcoords=[]
+ for(let i=0;i<news.length;i++){
+  if(news[i]){
+   if(last==false){cur=[];newcoords.push(cur)}
+   cur.push(coords[i])
+  }
+  last=news[i]
+ }
+ var newlines = L.polyline(newcoords, {color:"#e600de"})
+ newlines.addTo(m)
+ 
  m.fitBounds(polyline.getBounds());
  var slide = ge("slide")
  slide.max = coords.length
@@ -87,7 +100,7 @@ L.tileLayer("tile/"+tile+"/{z}/{x}/{y}.png", {}).addTo(map);
 L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png", {}).addTo(rmap);
 
 var ids = gu("id").split(",")
-for(var i=0;i<ids.length;i++)fetch("ll?id="+ids[i]).then(r=>r.json()).then(d=>{addpath(map,d);addpath(rmap,d)})
+for(var i=0;i<ids.length;i++)fetch("ll?id="+ids[i]).then(r=>r.json()).then(d=>{addpath(map,d.P,d.N);addpath(rmap,d.P,d.N)})
 
 
 function setNext(id){ge("next").href="map.html?id="+id}
