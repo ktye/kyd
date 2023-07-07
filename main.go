@@ -12,8 +12,9 @@ import (
 func main() {
 	var add, list, news, race, cal, bitmap, k, table, totals, serve, unics, years bool
 	var id int64
-	var date, dir, here, addr, fit, imprt, diff string
+	var hdr, date, dir, here, addr, fit, imprt, diff string
 	flag.BoolVar(&add, "add", false, "add/import")
+	flag.StringVar(&hdr, "hdr", "", `-add -head="R 20230607T080000 10.0 39m2s"`)
 	flag.BoolVar(&list, "list", false, "print header")
 	flag.BoolVar(&news, "news", false, "print list with new km")
 	flag.BoolVar(&race, "race", false, "print races")
@@ -52,6 +53,11 @@ func main() {
 	if fit != "" {
 		f, e := ReadFit(fit)
 		fatal(e)
+		db = SingleFile(f)
+	} else if hdr != "" {
+		f, e := importHeader(hdr)
+		fatal(e)
+		fmt.Println("add", f)
 		db = SingleFile(f)
 	} else {
 		var e error

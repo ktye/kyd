@@ -13,6 +13,40 @@ import (
 	"time"
 )
 
+func importHeader(s string) (File, error) {
+	var f File
+	use := fmt.Errorf("import header: R 20230607T080000 10.2 39m2s")
+	v := strings.Fields(s)
+	if len(s) < len("R 20230102T123344 1 1m2s") || len(v) != 4 {
+		return f, use
+	}
+	isrun := false
+	if v[0] == "R" {
+		isrun = true
+	} else if v[0] != "B" {
+		return f, use
+	}
+	t, e := time.Parse("20060102T150405", v[1])
+	if e != nil {
+		return f, use
+	}
+	km, e := strconv.ParseFloat(v[2], 64)
+	if e != nil {
+		return f, use
+	}
+	dur, e := time.ParseDuration(v[3])
+	if e != nil {
+		return f, use
+	}
+	f.Header.Start = t.Unix()
+	f.Header.Type = 1
+	if isrun == false {
+		f.Header.Type = 2
+	}
+	f.Header.Seconds = float32(dur.Seconds())
+	f.Header.Meters = float32(1000.0 * km)
+	return f, nil
+}
 func importDB(src, dst string) {
 	if d, e := ioutil.ReadDir(dst); e != nil {
 		fatal(e)
