@@ -11,7 +11,7 @@ import (
 
 func main() {
 	var add, list, news, race, cal, bitmap, k, table, totals, serve, unics, years bool
-	var id int64
+	var id, shorts int64
 	var hdr, date, dir, here, addr, fit, imprt, diff string
 	flag.BoolVar(&add, "add", false, "add/import")
 	flag.StringVar(&hdr, "hdr", "", `-add -head="R 20230607T080000 10.0 39m2s"`)
@@ -34,6 +34,7 @@ func main() {
 	flag.StringVar(&imprt, "import", "", "import old db")
 	flag.StringVar(&diff, "diff", "", "compare fit dir against the db")
 	flag.BoolVar(&years, "years", false, "year totals")
+	flag.Int64Var(&shorts, "shorts", 0, "write shorts db delta since arg(id) to lastid.shorts")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "github.com/ktye/kyd")
 		flag.PrintDefaults()
@@ -131,6 +132,8 @@ func main() {
 		Years(db)
 	} else if serve {
 		server(addr, db)
+	} else if shorts > 0 {
+		Shorts(db, shorts)
 	} else {
 		fmt.Println("no command")
 	}
