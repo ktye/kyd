@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	var add, list, news, race, cal, bitmap, k, table, totals, serve, unics, years bool
+	var add, list, news, race, cal, bitmap, k, table, totals, serve, unics, years, tour bool
 	var id int64
 	var shorts int
 	var hdr, date, dir, here, addr, fit, imprt, diff string
@@ -36,6 +36,7 @@ func main() {
 	flag.StringVar(&diff, "diff", "", "compare fit dir against the db")
 	flag.BoolVar(&years, "years", false, "year totals")
 	flag.IntVar(&shorts, "shorts", 0, "write shorts db for year(arg) to year.shorts")
+	flag.BoolVar(&tour, "tour", false, "write tour file for span(date)")
 	flag.Usage = func() {
 		fmt.Fprintln(os.Stderr, "github.com/ktye/kyd")
 		flag.PrintDefaults()
@@ -135,6 +136,8 @@ func main() {
 		server(addr, db)
 	} else if shorts > 0 {
 		Shorts(db, shorts)
+	} else if tour {
+		Tour(db)
 	} else {
 		fmt.Println("no command")
 	}
