@@ -82,13 +82,13 @@ func Tour(db DB) {
 func rle(s string) string {
 	s += "ABCDEFAB" // 3..8
 	var r []byte
-	for i := 1; i<len(s)-8; i++ {
+	for i := 0; i < len(s)-8; i++ {
 		c := s[i]
 		j := 1
-		for j<8&&s[i+j]==c {
+		for j < 8 && s[i+j] == c {
 			j++
-			i++
 		}
+		i += j - 1
 		r = append(r, c)
 		if j == 2 {
 			r = append(r, c)
